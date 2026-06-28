@@ -1,0 +1,18 @@
+module tb_q5;
+reg a,b;
+wire c;
+
+q5 uut(.a(a),.b(b),.c(c));
+
+initial begin
+    a=1'b0;b=1'b0;
+    #10 a=1'b0;b=1'b1;
+    #10 a=1'b1;b=1'b0;
+    #10 a=1'b1;b=1'b1;
+    #10 $finish;
+end
+
+initial begin
+    $monitor("a=%b,b=%b,c=%b",a,b,c);
+end
+endmodule
