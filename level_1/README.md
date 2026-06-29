@@ -2,7 +2,7 @@
 
 > **Part of:** [verilog-practice](../) — Verilog HDL learning from zero to FSM-based project  
 > **Tools:** Icarus Verilog · VS Code  
-> **Status:** 🔄 In Progress — Day 2 (Q1–Q6 done)
+> **Status:** 🔄 In Progress — Day 3 (Q1–Q10 done)
 
 ---
 
@@ -27,10 +27,10 @@ Verilog equivalent: Wire → NOT gate → AND gate
 | Q4 | `q04_or.v` | OR of two inputs | ✅ Done |
 | Q5 | `q05_xor.v` | XOR of two inputs | ✅ Done |
 | Q6 | `q06_xnor.v` | XNOR of two inputs | ✅ Done |
-| Q7 | `q07_nand_nor.v` | NAND and NOR in same module | ⬜ Not Started |
-| Q8 | `q08_half_adder.v` | Sum and carry from two inputs | ⬜ Not Started |
-| Q9 | `q09_full_adder.v` | Three inputs, sum and carry | ⬜ Not Started |
-| Q10 | `q10_7458.v` | Implements the real 7458 IC logic | ⬜ Not Started |
+| Q7 | `q07_nand_nor.v` | NAND and NOR in same module | ✅ Done |
+| Q8 | `q08_half_adder.v` | Sum and carry from two inputs | ✅ Done |
+| Q9 | `q09_full_adder.v` | Three inputs, sum and carry | ✅ Done |
+| Q10 | `q10_7458.v` | Implements the real 7458 IC logic | ✅ Done |
 
 ---
 
@@ -49,142 +49,117 @@ No GTKWave needed at this level. Verify output against truth table below.
 
 ---
 
-## Q4 — OR Gate
+Q7 — NAND and NOR Gates
+What it does: Implements both NAND and NOR in one module with two outputs.
 
-**What it does:** Output is HIGH when at least one input is HIGH.
-**Real world use:** Combining multiple signals — if any condition is true, output activates.
-
-**Code:**
-```verilog
-module q04_or(input a, input b, output out);
-    assign out = a | b;
+Real world use: NAND and NOR are called universal gates — any logic circuit in the world can be built using only NAND gates or only NOR gates.
+Code:
+verilogmodule q07_nand_nor(
+    input  a,
+    input  b,
+    output nand_out,
+    output nor_out
+);
+    assign nand_out = ~(a & b);
+    assign nor_out  = ~(a | b);
 endmodule
-```
+Truth Table:
+abnand_outnor_out0011011010101100
+Simulation output:
+time=0  | a=0 b=0 | nand=1 nor=1
+time=10 | a=0 b=1 | nand=1 nor=0
+time=20 | a=1 b=0 | nand=1 nor=0
+time=30 | a=1 b=1 | nand=0 nor=0
+What I learned:
 
-**Truth Table:**
+NAND is AND with a NOT on the output — ~(a & b). NOR is OR with a NOT — ~(a | b). One module can have multiple outputs driven by separate assign statements simultaneously.
 
-| a | b | out |
-|---|---|-----|
-| 0 | 0 | 0   |
-| 0 | 1 | 1   |
-| 1 | 0 | 1   |
-| 1 | 1 | 1   |
+Q8 — Half Adder
+What it does: Adds two 1-bit numbers and produces a sum bit and a carry bit.
 
-**Simulation output:**
-```
-time=0  | a=0 b=0 | out=0
-time=10 | a=0 b=1 | out=1
-time=20 | a=1 b=0 | out=1
-time=30 | a=1 b=1 | out=1
-```
-
-**What I learned:**  
-`|` is the bitwise OR operator. Output is 0 only when both inputs are 0 — any single HIGH input is enough to make output HIGH.
-
----
-
-## Q5 — XOR Gate
-
-**What it does:** Output is HIGH only when inputs are different from each other.  
-**Real world use:** Parity checking, comparators, and generating the sum bit in adders.
-
-**Code:**
-```verilog
-module q05_xor(input a, input b, output out);
-    assign out = a ^ b;
+Real world use: The fundamental building block of all arithmetic in digital hardware. Every processor, calculator, and computer uses half adders at its core.
+Code:
+verilogmodule q08_half_adder(
+    input  a,
+    input  b,
+    output sum,
+    output carry
+);
+    assign sum   = a ^ b;
+    assign carry = a & b;
 endmodule
-```
+Truth Table:
+absumcarry0000011010101101
+Simulation output:
+time=0  | a=0 b=0 | sum=0 carry=0
+time=10 | a=0 b=1 | sum=1 carry=0
+time=20 | a=1 b=0 | sum=1 carry=0
+time=30 | a=1 b=1 | sum=0 carry=1
+What I learned:
 
-**Truth Table:**
+1+1 in binary is 10 — the sum bit is 0 and carry is 1. XOR naturally gives the sum because it outputs 0 when both inputs are 1. AND gives the carry because carry is only generated when both inputs are 1.
 
-| a | b | out |
-|---|---|-----|
-| 0 | 0 | 0   |
-| 0 | 1 | 1   |
-| 1 | 0 | 1   |
-| 1 | 1 | 0   |
+Q9 — Full Adder
+What it does: Adds three 1-bit numbers — a, b, and carry-in. Produces sum and carry-out.
 
-**Simulation output:**
-```
-time=0  | a=0 b=0 | out=0
-time=10 | a=0 b=1 | out=1
-time=20 | a=1 b=0 | out=1
-time=30 | a=1 b=1 | out=0
-```
-
-**What I learned:**  
-`^` is the XOR operator. When both inputs are same — whether both 0 or both 1 — output is 0. This is why XOR is used for the sum bit in a half adder — 1+1 gives sum=0 with a carry.
-
----
-
-## Q6 — XNOR Gate
-
-**What it does:** Output is HIGH only when both inputs are the same. Opposite of XOR.  
-**Real world use:** Equality checkers — used when you want to detect if two signals match.
-
-**Code:**
-```verilog
-module q06_xnor(input a, input b, output out);
-    assign out = ~(a ^ b);
+Real world use: Chained together to build multi-bit adders. A 32-bit adder inside a processor uses 32 full adders connected in sequence.
+Code:
+verilogmodule q09_full_adder(
+    input  a,
+    input  b,
+    input  cin,
+    output sum,
+    output cout
+);
+    assign sum  = a ^ b ^ cin;
+    assign cout = (a & b) | (b & cin) | (a & cin);
 endmodule
-```
+Truth Table:
+abcinsumcout0000000110010100110110010101011100111111
+Simulation output:
+time=0  | a=0 b=0 cin=0 | sum=0 cout=0
+time=10 | a=0 b=0 cin=1 | sum=1 cout=0
+time=20 | a=0 b=1 cin=0 | sum=1 cout=0
+time=30 | a=0 b=1 cin=1 | sum=0 cout=1
+time=40 | a=1 b=0 cin=0 | sum=1 cout=0
+time=50 | a=1 b=0 cin=1 | sum=0 cout=1
+time=60 | a=1 b=1 cin=0 | sum=0 cout=1
+time=70 | a=1 b=1 cin=1 | sum=1 cout=1
+What I learned:
 
-**Truth Table:**
+Carry-out is generated whenever at least two of the three inputs are 1 — that's what (a&b) | (b&cin) | (a&cin) checks. This was the first time I wrote a truth table with 8 rows and verified all 8 cases in simulation.
 
-| a | b | out |
-|---|---|-----|
-| 0 | 0 | 1   |
-| 0 | 1 | 0   |
-| 1 | 0 | 0   |
-| 1 | 1 | 1   |
+Q10 — 7458 Chip
+What it does: Implements the exact logic of the real 7458 dual AND-OR IC.
 
-**Simulation output:**
-```
-time=0  | a=0 b=0 | out=1
-time=10 | a=0 b=1 | out=0
-time=20 | a=1 b=0 | out=0
-time=30 | a=1 b=1 | out=1
-```
+Real world use: Shows how a real IC datasheet maps directly to Verilog. Reading datasheets and translating to HDL is a core skill in chip design.
+Logic:
 
-**What I learned:**  
-XNOR is just XOR with a NOT on the output — `~(a ^ b)`. It outputs 1 when inputs are equal, which is the exact opposite of XOR. This makes it naturally useful as an equality checker.
+Output p = (a AND b) OR (c AND d)
+Output q = (e AND f) OR (g AND h)
 
----
-
-
-## Key Concepts So Far
-
-| Concept | What It Means |
-|---------|--------------|
-| `module` | A hardware block with defined inputs and outputs |
-| `input` / `output` | Ports — how signals enter and leave a module |
-| `assign` | Continuously drives a wire — always active, not a one-time execution |
-| `wire` | Carries a value but cannot store it — no memory |
-| `~` | Bitwise NOT — flips 0 to 1 and 1 to 0 |
-| `&` | Bitwise AND — output 1 only when all inputs are 1 |
-| `$monitor` | Prints to terminal whenever any listed signal changes |
-
----
-
-## Testbench Pattern Used for All Questions
-
-```verilog
-module q01_wire_tb;
-    reg in;
-    wire out;
-
-    q01_wire uut (.in(in), .out(out));
-
-    initial begin
-        $monitor("time=%0t | in=%b | out=%b", $time, in, out);
-        in = 0; #10;
-        in = 1; #10;
-        $finish;
-    end
+Code:
+verilogmodule q10_7458(
+    input  a, b, c, d,
+    input  e, f, g, h,
+    output p, q
+);
+    assign p = (a & b) | (c & d);
+    assign q = (e & f) | (g & h);
 endmodule
-```
+Simulation output:
+time=0  | a=1 b=1 c=0 d=0 | p=1
+time=10 | a=0 b=0 c=1 d=1 | p=1
+time=20 | a=1 b=1 c=1 d=1 | p=1
+time=30 | a=0 b=0 c=0 d=0 | p=0
+What I learned:
+
+A real IC has a fixed internal logic structure that was designed decades ago. Verilog can describe that exact same structure using assign statements. Looking at the 7458 datasheet before coding made the logic immediately obvious.
+
+Key Concepts Learned — Full Level 1 Summary
+ConceptWhat It MeansmoduleA hardware block with defined inputs and outputsinput / outputPorts — how signals enter and leave a moduleassignContinuously drives a wire — always activewireCarries a value but cannot store it~Bitwise NOT&Bitwise AND|Bitwise OR^Bitwise XOR~(a & b)NAND — AND with inverted output~(a | b)NOR — OR with inverted output$monitorPrints signal values to terminal on every changeMultiple outputsOne module can drive several outputs simultaneously
 
 ---
 
 *Updated daily as questions are completed*  
-*Next: Q7 NAND/NOR gate, Q8 Half Adder, Q9 Full Adder, Q10 7458 chip*
+*Level 1 Complete — Moving to [Level 2 — Vectors](../level2-vectors/README.md)*
