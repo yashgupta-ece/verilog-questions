@@ -2,7 +2,7 @@
 
 > **Part of:** [verilog-practice](../) — Verilog HDL learning from zero to FSM-based project  
 > **Tools:** Icarus Verilog · VS Code · GTKWave  
-> **Status:** 🔄 In Progress — Day 4 (Q11–Q12 done)
+> **Status:** 🔄 In Progress — Day 5 (Q11–Q14 done)
 
 ---
 
@@ -23,8 +23,8 @@ Verilog equivalent: Vectors → Bit Selection → Part Select
 |---|------|-------------|--------|
 | Q11 | `q11_vector_basic.v` | Declares a 4-bit wire and assigns constant `1010` | ✅ Done |
 | Q12 | `q12_bit_extract.v` | Extracts upper and lower 2 bits from a 4-bit input | ✅ Done |
-| Q13 | `q13_reverse_bits.v` | Reverse bits of an 8-bit input | ⏳ Pending |
-| Q14 | `q14_concat.v` | Combine two 4-bit inputs into one 8-bit output | ⏳ Pending |
+| Q13 | `q13_reverse.v` | Reverse bits of an 8-bit input | ✅ Done |
+| Q14 | `q14_concat.v` | Combine two 4-bit inputs into 8-bit output | ✅ Done |
 | Q15 | `q15_vector_logic.v` | 4-bit AND, OR and XOR | ⏳ Pending |
 | Q16 | `q16_zero_detect.v` | Detect whether an 8-bit input is zero | ⏳ Pending |
 | Q17 | `q17_replication.v` | Replicate a 4-bit input four times | ⏳ Pending |
@@ -57,90 +57,59 @@ This makes vector values easier to understand.
 
 ---
 
-## Q11 — 4-bit Vector Constant
-
-**What it does:**  
-Declares a 4-bit output vector and continuously assigns the binary constant `1010`.
-
-**Real world use:**  
-Digital circuits often use constant bit patterns for initialization, control signals, configuration registers, and instruction encoding.
-
-### Code
-
-```verilog
-module q11_vector_basic(
-    input  wire [3:0] a,
-    output wire [3:0] y
+Q13 — Reverse Bits
+What it does: Takes an 8-bit input and outputs it with all bits in reverse order. Bit 0 becomes bit 7, bit 7 becomes bit 0.
+Real world use: Bit reversal is used in FFT algorithms, serial communication protocols, and data formatting between different hardware systems.
+Code:
+verilogmodule q13_reverse(
+    input  [7:0] in,
+    output [7:0] out
 );
-
-    assign y = 4'b1010;
-
+    assign out = {in[0], in[1], in[2], in[3],
+                  in[4], in[5], in[6], in[7]};
 endmodule
-```
+Examples:
+in             out
+10110001    10001101
+11110000    00001111
+10101010    01010101
+00000001    10000000
 
-### Simulation Output
 
-```
-a=0000 y=1010
-a=0101 y=1010
-a=1111 y=1010
-```
+Simulation output:
+time=0  | in=B1 | out=8D
+time=10 | in=F0 | out=0F
+time=20 | in=AA | out=55
+time=30 | in=01 | out=80
+What I learned:
+Curly braces {} in Verilog are the concatenation operator — they join multiple signals into one wider signal. By listing individual bits in reverse order inside {}, the output gets reversed. This was the first time I used individual bit access in[0], in[1] etc. on a vector.
 
-### What I Learned
-
-- `[3:0]` declares a 4-bit vector.
-- Binary constants use the format `4'b1010`.
-- `assign` can drive an entire vector, not just a single bit.
-- The input `a` is unused because the output is a fixed constant.
-
----
-
-## Q12 — Extract Upper and Lower Bits
-
-**What it does:**  
-Splits a 4-bit input into two separate 2-bit outputs using part-select.
-
-**Real world use:**  
-Processors, communication protocols, and instruction decoders frequently divide buses into smaller fields for independent processing.
-
-### Code
-
-```verilog
-module q12_bit_extract(
-    input  wire [3:0] a,
-    output wire [1:0] upper,
-    output wire [1:0] lower
+Q14 — Concatenation
+What it does: Takes two separate 4-bit inputs and joins them into one 8-bit output.
+Real world use: Building wider data buses from narrower ones, combining address and data fields, packing multiple signals into one register.
+Code:
+verilogmodule q14_concat(
+    input  [3:0] a,
+    input  [3:0] b,
+    output [7:0] out
 );
-
-    assign upper = a[3:2];
-    assign lower = a[1:0];
-
+    assign out = {a, b};
 endmodule
-```
+Examples:
+a    b     out
+1100 1010  11001010
+1111 0000  11110000
+0001 0010  00010010
+1010 0101  10100101
 
-### Example
 
-| Input | Upper | Lower |
-|------|------|------|
-| 1010 | 10 | 10 |
-| 1101 | 11 | 01 |
-| 0111 | 01 | 11 |
-
-### Simulation Output
-
-```
-a=0000 upper=00 lower=00
-a=1010 upper=10 lower=10
-a=1101 upper=11 lower=01
-a=0111 upper=01 lower=11
-```
-
-### What I Learned
-
-- Individual bits are accessed using indexing (`a[0]`).
-- Groups of bits are extracted using part-select (`a[3:2]`).
-- Verilog numbers bits from **LSB (0)** to **MSB (N-1)**.
-- A single vector can be split into multiple outputs without extra logic.
+Simulation output:
+time=0  | a=C b=A | out=CA
+time=10 | a=F b=0 | out=F0
+time=20 | a=1 b=2 | out=12
+time=30 | a=A b=5 | out=A5
+What I learned:
+{a, b} places a in the upper bits and b in the lower bits of the output. Order inside {} matters — {a, b} and {b, a} give different results. The total width of the output must match the sum of widths of all signals inside the braces — {4-bit, 4-bit} gives exactly 8 bits.
 
 ---
 
@@ -159,4 +128,4 @@ a=0111 upper=01 lower=11
 ---
 
 *Updated daily as questions are completed*  
-*Next: Q13 — Reverse Bits using Concatenation*
+**Next: Q15 bitwise operations, Q16 reduction**
