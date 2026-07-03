@@ -7,33 +7,29 @@
 :vpi_module "C:\iverilog\lib\ivl\vhdl_textio.vpi";
 :vpi_module "C:\iverilog\lib\ivl\v2005_math.vpi";
 :vpi_module "C:\iverilog\lib\ivl\va_math.vpi";
-S_00000186c47f5200 .scope module, "tb_q6" "tb_q6" 2 1;
+S_00000246294c9d80 .scope module, "tb_q8" "tb_q8" 2 1;
  .timescale 0 0;
-v00000186c47f5520_0 .var "a", 7 0;
-v00000186c47f55c0_0 .net "out", 0 0, L_00000186c47aead0;  1 drivers
-S_00000186c47f5390 .scope module, "uut" "q6" 2 5, 3 1 0, S_00000186c47f5200;
+v00000246294cdd70_0 .var "in", 7 0;
+v00000246294c9310_0 .net "out", 7 0, L_0000024629515a60;  1 drivers
+S_00000246295158d0 .scope module, "uut" "q8" 2 7, 3 1 0, S_00000246294c9d80;
  .timescale 0 0;
-    .port_info 0 /INPUT 8 "a";
-    .port_info 1 /OUTPUT 1 "out";
-L_00000186c483b848 .functor BUFT 1, C4<00000000>, C4<0>, C4<0>, C4<0>;
-v00000186c47a70d0_0 .net/2u *"_ivl_0", 7 0, L_00000186c483b848;  1 drivers
-v00000186c47a6d00_0 .net "a", 7 0, v00000186c47f5520_0;  1 drivers
-v00000186c47a7210_0 .net "out", 0 0, L_00000186c47aead0;  alias, 1 drivers
-L_00000186c47aead0 .cmp/eq 8, v00000186c47f5520_0, L_00000186c483b848;
-    .scope S_00000186c47f5200;
+    .port_info 0 /INPUT 8 "in";
+    .port_info 1 /OUTPUT 8 "out";
+v00000246294c70d0_0 .net "in", 7 0, v00000246294cdd70_0;  1 drivers
+v00000246294c6d00_0 .net "lower", 3 0, L_00000246294ca090;  1 drivers
+v0000024629514450_0 .net "out", 7 0, L_0000024629515a60;  alias, 1 drivers
+v00000246294c9f10_0 .net "upper", 3 0, L_00000246294ca130;  1 drivers
+L_00000246294ca090 .part v00000246294cdd70_0, 0, 4;
+L_00000246294ca130 .part v00000246294cdd70_0, 4, 4;
+L_0000024629515a60 .concat [ 4 4 0 0], L_00000246294ca130, L_00000246294ca090;
+    .scope S_00000246294c9d80;
 T_0 ;
-    %vpi_call 2 8 "$monitor", "a=%b,out=%b", v00000186c47f5520_0, v00000186c47f55c0_0 {0 0 0};
-    %pushi/vec4 1, 0, 8;
-    %store/vec4 v00000186c47f5520_0, 0, 8;
+    %vpi_call 2 10 "$monitor", "in=%b,swap=%b", v00000246294cdd70_0, v00000246294c9310_0 {0 0 0};
+    %pushi/vec4 175, 0, 8;
+    %store/vec4 v00000246294cdd70_0, 0, 8;
     %delay 10, 0;
-    %pushi/vec4 0, 0, 8;
-    %store/vec4 v00000186c47f5520_0, 0, 8;
-    %delay 10, 0;
-    %pushi/vec4 255, 0, 8;
-    %store/vec4 v00000186c47f5520_0, 0, 8;
-    %delay 10, 0;
-    %pushi/vec4 138, 0, 8;
-    %store/vec4 v00000186c47f5520_0, 0, 8;
+    %pushi/vec4 15, 0, 8;
+    %store/vec4 v00000246294cdd70_0, 0, 8;
     %delay 10, 0;
     %vpi_call 2 13 "$finish" {0 0 0};
     %end;
@@ -42,5 +38,5 @@ T_0 ;
 :file_names 4;
     "N/A";
     "<interactive>";
-    "tb_q6.v";
-    "q6.v";
+    "tb_q8.v";
+    "q8.v";

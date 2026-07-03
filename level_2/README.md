@@ -2,7 +2,7 @@
 
 > **Part of:** [verilog-practice](../) — Verilog HDL learning from zero to FSM-based project  
 > **Tools:** Icarus Verilog · VS Code · GTKWave  
-> **Status:** 🔄 In Progress — Day 6 (Q11–Q16 done)
+>**Status:** ✅ Level 2 Complete — All 8 questions done
 
 ---
 
@@ -27,8 +27,8 @@ Verilog equivalent: Vectors → Bit Selection → Part Select
 | Q14 | `q14_concat.v` | Combine two 4-bit inputs into 8-bit output | ✅ Done |
 | Q15 | `q15_bitwise4.v` | Bitwise AND, OR, XOR of two 4-bit inputs | ✅ Done |
 | Q16 | `q16_reduction.v` | Check if 8-bit number is zero | ✅ Done |
-| Q17 | `q17_replication.v` | Replicate a 4-bit input four times | ⏳ Pending |
-| Q18 | `q18_swap_nibbles.v` | Swap upper and lower nibble of an 8-bit input | ⏳ Pending |
+| Q17 | `q17_replicate.v` | Replicate 4-bit input 4 times to make 16-bit | ✅ Done |
+| Q18 | `q18_swapnibble.v` | Swap upper and lower nibbles of 8-bit input | ✅ Done |
 
 ---
 
@@ -57,59 +57,58 @@ This makes vector values easier to understand.
 
 ---
 
-Q15 — 4-bit Bitwise Operations
-What it does: Takes two 4-bit inputs and performs AND, OR, and XOR on all bits simultaneously, producing three 4-bit outputs.
-Real world use: Masking specific bits, setting or clearing flags, comparing two data values in hardware.
+Q17 — Replication
+What it does: Takes a 4-bit input and repeats it 4 times to produce a 16-bit output.
+Real world use: Sign extension in processors, filling a wide bus with a repeated pattern, initializing memory with a repeated value.
 Code:
-verilogmodule q15_bitwise4(
-    input  [3:0] a,
-    input  [3:0] b,
-    output [3:0] and_out,
-    output [3:0] or_out,
-    output [3:0] xor_out
+verilogmodule q17_replicate(
+    input  [3:0] in,
+    output [15:0] out
 );
-    assign and_out = a & b;
-    assign or_out  = a | b;
-    assign xor_out = a ^ b;
+    assign out = {4{in}};
 endmodule
 Examples:
-a     b    AND  OR   XOR 
-1100 1010 1000 1110  0110 
-1111 0000 0000 1111  1111
-1010 0101 0000 1111  1111
-1111 1111 1111 1111  0000
+in     out
+1010 1010101010101010
+1111 1111111111111111
+0001 0001000100010001
+1100 1100110011001100
 
 Simulation output:
-time=0  | a=C b=A | and=8 or=E xor=6
-time=10 | a=F b=0 | and=0 or=F xor=F
-time=20 | a=A b=5 | and=0 or=F xor=F
-time=30 | a=F b=F | and=F or=F xor=0
+time=0  | in=A | out=AAAA
+time=10 | in=F | out=FFFF
+time=20 | in=1 | out=1111
+time=30 | in=C | out=CCCC
 What I learned:
-The same operators &, |, ^ that worked on single bits in Level 1 work on vectors too — they just operate on each bit position independently and simultaneously. This is called bitwise operation. XOR of identical values always gives 0 — this is actually used in hardware to detect if two signals are equal.
+{4{in}} means "repeat in four times." The number before the braces is the replication count. This is much cleaner than writing {in, in, in, in} manually — and scales easily if you need 8 or 16 repetitions. Replication and concatenation can also be combined like {2{a}, 2{b}}.
 
-Q16 — Zero Checker (Reduction Operator)
-What it does: Takes an 8-bit input and outputs 1 if all bits are zero, 0 otherwise.
-Real world use: Zero detection in ALUs, checking if a register is empty, flag generation in processors.
+Q18 — Swap Nibbles
+What it does: Takes an 8-bit input and swaps the upper 4 bits with the lower 4 bits.
+Real world use: Byte manipulation in communication protocols, endianness conversion, data formatting between different hardware interfaces.
 Code:
-verilogmodule q16_reduction(
+verilogmodule q18_swapnibble(
     input  [7:0] in,
-    output       zero
+    output [7:0] out
 );
-    assign zero = ~(|in);
+    assign out = {in[3:0], in[7:4]};
 endmodule
 Examples:
-in        zero
-00000000   1
-00000001   0
-10000000   0
-11111111   0
+in       out
+11001010 10101100
+11110000 00001111
+10100101 01011010
+00010010 00100001
+
 Simulation output:
-time=0  | in=00 | zero=1
-time=10 | in=01 | zero=0
-time=20 | in=80 | zero=0
-time=30 | in=FF | zero=0
+time=0  | in=CA | out=AC
+time=10 | in=F0 | out=0F
+time=20 | in=A5 | out=5A
+time=30 | in=12 | out=21
 What I learned:
-|in is a reduction OR — it ORs all 8 bits of in together into a single bit. If any bit is 1, the result is 1. Inverting that with ~ gives 1 only when all bits were 0. This was the first time I used a reduction operator and it replaced what would have been 7 OR operations written manually.
+Combining part-select and concatenation in one assign statement is very powerful. {in[3:0], in[7:4]} puts the lower nibble first and the upper nibble second — effectively swapping them. This question combined two concepts from earlier questions into one solution.
+
+Full Level 2 Summary
+ConceptWhat It Means[3:0]4-bit vector declaration — MSB:LSB4'b1010Sized binary literaldata[3:2]Part-select — extracts a range of bitsdata[0]Single bit access{a, b}Concatenation — joins signals into wider signal{4{in}}Replication — repeats signal N times|inReduction OR — ORs all bits into one&inReduction AND — ANDs all bits into oneBitwise ops on vectors&, |, ^ work bit-by-bit across full width
 ---
 
 # Key Concepts Learned — Level 2 So Far
@@ -127,4 +126,4 @@ What I learned:
 ---
 
 *Updated daily as questions are completed*  
-**Next: Q17 replication, Q18 swap nibbles**
+**Level 2 Complete — Moving to [Level 3 — Combinational Logic](../level3-combinational/README.md)**
