@@ -2,7 +2,7 @@
 
 > **Part of:** [verilog-questions](../) — Verilog HDL learning from zero to FSM-based project  
 > **Tools:** Icarus Verilog · GTKWave · VS Code  
-> **Status:** 🔄 In Progress — Day 1 (Q19 done)
+> **Status:** 🔄 In Progress — Day 2 (Q19–Q20 done)
 
 ---
 
@@ -24,7 +24,7 @@ Verilog equivalent: always @(*), if/else, case inside hardware
 | # | File | What It Does | Status |
 |---|------|-------------|--------|
 | Q19 | `q19_mux2to1.v` | 2-to-1 Multiplexer using if/else | ✅ Done |
-| Q20 | `q20_mux4to1.v` | 4-to-1 Multiplexer using case | ⬜ Not Started |
+| Q20 | `q20_mux4to1.v` | 4-to-1 Multiplexer using case | ✅ Done |
 | Q21 | `q21_priority.v` | Priority Encoder — highest active input | ⬜ Not Started |
 | Q22 | `q22_sevenseg.v` | 7-Segment Display Decoder | ⬜ Not Started |
 | Q23 | `q23_comparator.v` | 2-bit Comparator — gt, eq, lt outputs | ⬜ Not Started |
@@ -41,47 +41,44 @@ vvp output
 gtkwave dump.vcd
 ```
 
+GTKWave is standard from Q20 onwards.
+Right click signal → Data Format → Hex for multi-bit signals.
+Right click signal → Data Format → Binary to see individual bit changes.
+
 ---
-
-## Q19 — 2-to-1 Multiplexer
-
-**What it does:** Selects between two inputs based on a select signal. When sel=0 output follows a, when sel=1 output follows b.  
-**Real world use:** Data selection in buses, routing signals between different parts of a circuit, choosing between two data sources.
-
-**Code:**
-```verilog
-module q19_mux2to1(
-    input  a,
-    input  b,
-    input  sel,
-    output reg out
+Q20 — 4-to-1 Multiplexer
+What it does: Selects one of four inputs based on a 2-bit select signal.
+Real world use: Data routing in processors, selecting between multiple data sources on a shared bus, instruction decoding.
+Code:
+verilogmodule q20_mux4to1(
+    input       a, b, c, d,
+    input  [1:0] sel,
+    output reg   out
 );
     always @(*) begin
-        if (sel)
-            out = b;
-        else
-            out = a;
+        case(sel)
+            2'b00: out = a;
+            2'b01: out = b;
+            2'b10: out = c;
+            2'b11: out = d;
+        endcase
     end
 endmodule
-```
+Truth Table:
+selout00a01b10c11d
+Simulation output:
+time=0  | sel=00 | out=a
+time=10 | sel=01 | out=b
+time=20 | sel=10 | out=c
+time=30 | sel=11 | out=d
 
-**Truth Table:**
+**Waveform:**
 
-| sel | out |
-|-----|-----|
-| 0   | a   |
-| 1   | b   |
+![Q20 Waveform](waveforms/q20_waveform.png)
 
-**Simulation output:**
-time=0  | a=0 b=0 sel=0 | out=0
-time=10 | a=0 b=1 sel=0 | out=0
-time=20 | a=0 b=1 sel=1 | out=1
-time=30 | a=1 b=0 sel=0 | out=1
-time=40 | a=1 b=0 sel=1 | out=0
-time=50 | a=1 b=1 sel=1 | out=1
 
-**What I learned:**  
-Unlike `assign`, the `always @(*)` block re-evaluates whenever any input signal changes. The `*` means "watch all signals used inside this block." Output must be `reg` because always blocks can only drive reg types — even though the output behaves like combinational logic with no memory.
+What I learned:
+case is cleaner than if/else when you have multiple fixed conditions on the same signal. Unlike if/else which checks conditions in order, case directly matches the value — much easier to read with 4 or more options. I verified this using GTKWave — switching the select signal and watching the output change in the waveform made the multiplexer behaviour much clearer than terminal output alone.
 
 ---
 
@@ -97,5 +94,4 @@ Unlike `assign`, the `always @(*)` block re-evaluates whenever any input signal 
 ---
 
 *Updated as questions are completed*  
-*Next: Q20 4-to-1 Mux using case statement*  
-*Previous: [Level 2 — Vectors](../level2-vectors/README.md)*
+*Next: Q21 Priority Encoder* 
