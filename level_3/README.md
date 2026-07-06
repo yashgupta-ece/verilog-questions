@@ -2,7 +2,7 @@
 
 > **Part of:** [verilog-questions](../) — Verilog HDL learning from zero to FSM-based project  
 > **Tools:** Icarus Verilog · GTKWave · VS Code  
-> **Status:** 🔄 In Progress — Day 2 (Q19–Q20 done)
+> **Status:** 🔄 In Progress — Day 3 (Q19–Q21 done)
 
 ---
 
@@ -25,7 +25,7 @@ Verilog equivalent: always @(*), if/else, case inside hardware
 |---|------|-------------|--------|
 | Q19 | `q19_mux2to1.v` | 2-to-1 Multiplexer using if/else | ✅ Done |
 | Q20 | `q20_mux4to1.v` | 4-to-1 Multiplexer using case | ✅ Done |
-| Q21 | `q21_priority.v` | Priority Encoder — highest active input | ⬜ Not Started |
+| Q21 | `q21_priority.v` | Priority Encoder — highest active input | ✅ Done |
 | Q22 | `q22_sevenseg.v` | 7-Segment Display Decoder | ⬜ Not Started |
 | Q23 | `q23_comparator.v` | 2-bit Comparator — gt, eq, lt outputs | ⬜ Not Started |
 | Q24 | `q24_alu.v` | 4-bit ALU — add, sub, AND, OR | ⬜ Not Started |
@@ -46,39 +46,47 @@ Right click signal → Data Format → Hex for multi-bit signals.
 Right click signal → Data Format → Binary to see individual bit changes.
 
 ---
-Q20 — 4-to-1 Multiplexer
-What it does: Selects one of four inputs based on a 2-bit select signal.
-Real world use: Data routing in processors, selecting between multiple data sources on a shared bus, instruction decoding.
+Q21 — Priority Encoder
+What it does: Takes a 4-bit input and outputs the index of the highest active bit. If multiple bits are HIGH, the highest index wins.
+Real world use: Interrupt controllers in processors — when multiple devices request attention simultaneously, the highest priority device is served first.
 Code:
-verilogmodule q20_mux4to1(
-    input       a, b, c, d,
-    input  [1:0] sel,
-    output reg   out
+verilogmodule q21_priority(
+    input  [3:0] in,
+    output reg [1:0] out,
+    output reg valid
 );
     always @(*) begin
-        case(sel)
-            2'b00: out = a;
-            2'b01: out = b;
-            2'b10: out = c;
-            2'b11: out = d;
-        endcase
+        if (in[3]) begin
+            out = 2'b11; valid = 1;
+        end else if (in[2]) begin
+            out = 2'b10; valid = 1;
+        end else if (in[1]) begin
+            out = 2'b01; valid = 1;
+        end else if (in[0]) begin
+            out = 2'b00; valid = 1;
+        end else begin
+            out = 2'b00; valid = 0;
+        end
     end
 endmodule
 Truth Table:
-selout00a01b10c11d
-Simulation output:
-time=0  | sel=00 | out=a
-time=10 | sel=01 | out=b
-time=20 | sel=10 | out=c
-time=30 | sel=11 | out=d
+in   out    valid
+0000 00       0
+0001 00       1
+0010 01       1
+0100 10       1
+1000 11       1
+1010 11       1
+1111 11       1
+
 
 **Waveform:**
 
-![Q20 Waveform](waveforms/q20_waveform.png)
+![Q21 Waveform](waveforms/q21_waveform.png)
 
 
 What I learned:
-case is cleaner than if/else when you have multiple fixed conditions on the same signal. Unlike if/else which checks conditions in order, case directly matches the value — much easier to read with 4 or more options. I verified this using GTKWave — switching the select signal and watching the output change in the waveform made the multiplexer behaviour much clearer than terminal output alone.
+Order of if/else matters here — checking in[3] first means it always wins over lower bits when multiple inputs are HIGH. This is what makes it a priority encoder, not just a regular encoder. The valid output tells downstream logic whether any input was active at all — without it you can't distinguish "no input" from "input 0 active."
 
 ---
 
@@ -94,4 +102,4 @@ case is cleaner than if/else when you have multiple fixed conditions on the same
 ---
 
 *Updated as questions are completed*  
-*Next: Q21 Priority Encoder* 
+*Next: Q22 7-Segment Display Decoder*
