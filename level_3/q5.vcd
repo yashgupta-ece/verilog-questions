@@ -1,0 +1,87 @@
+$date
+	Wed Jul 08 23:51:30 2026
+$end
+$version
+	Icarus Verilog
+$end
+$timescale
+	1s
+$end
+$scope module tb_q5 $end
+$var wire 1 ! less $end
+$var wire 1 " greater $end
+$var wire 1 # equal $end
+$var reg 2 $ in1 [1:0] $end
+$var reg 2 % in2 [1:0] $end
+$scope module uut $end
+$var wire 2 & in1 [1:0] $end
+$var wire 2 ' in2 [1:0] $end
+$var reg 1 # equal $end
+$var reg 1 " greater $end
+$var reg 1 ! less $end
+$upscope $end
+$upscope $end
+$enddefinitions $end
+$comment Show the parameter values. $end
+$dumpall
+$end
+#0
+$dumpvars
+b0 '
+b0 &
+b0 %
+b0 $
+1#
+0"
+0!
+$end
+#10
+b1 %
+b1 '
+b1 $
+b1 &
+#20
+b10 %
+b10 '
+b10 $
+b10 &
+#30
+b11 %
+b11 '
+b11 $
+b11 &
+#40
+0#
+1"
+b0 %
+b0 '
+b1 $
+b1 &
+#50
+b1 %
+b1 '
+b10 $
+b10 &
+#60
+b10 %
+b10 '
+b11 $
+b11 &
+#70
+1!
+0"
+b1 %
+b1 '
+b0 $
+b0 &
+#80
+b10 %
+b10 '
+b1 $
+b1 &
+#90
+b11 %
+b11 '
+b10 $
+b10 &
+#100
