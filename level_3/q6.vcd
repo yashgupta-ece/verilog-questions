@@ -1,0 +1,88 @@
+$date
+	Thu Jul 09 21:58:18 2026
+$end
+$version
+	Icarus Verilog
+$end
+$timescale
+	1s
+$end
+$scope module tb_q6 $end
+$var wire 4 ! out [3:0] $end
+$var reg 4 " in1 [3:0] $end
+$var reg 4 # in2 [3:0] $end
+$var reg 2 $ operator_code [1:0] $end
+$scope module uut $end
+$var wire 4 % in1 [3:0] $end
+$var wire 4 & in2 [3:0] $end
+$var wire 2 ' operator_code [1:0] $end
+$var reg 4 ( out [3:0] $end
+$upscope $end
+$upscope $end
+$enddefinitions $end
+$comment Show the parameter values. $end
+$dumpall
+$end
+#0
+$dumpvars
+b1011 (
+b0 '
+b11 &
+b1000 %
+b0 $
+b11 #
+b1000 "
+b1011 !
+$end
+#10
+b101 !
+b101 (
+b1 $
+b1 '
+#20
+b0 !
+b0 (
+b10 $
+b10 '
+#30
+b1011 !
+b1011 (
+b11 $
+b11 '
+#40
+b1100 !
+b1100 (
+b10 #
+b10 &
+b1010 "
+b1010 %
+b0 $
+b0 '
+#50
+b101 !
+b101 (
+b111 #
+b111 &
+b1100 "
+b1100 %
+b1 $
+b1 '
+#60
+b10 !
+b10 (
+b11 #
+b11 &
+b1010 "
+b1010 %
+b10 $
+b10 '
+#70
+b1111 !
+b1111 (
+b111 #
+b111 &
+b1001 "
+b1001 %
+b11 $
+b11 '
+#80
