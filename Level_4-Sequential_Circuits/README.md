@@ -2,7 +2,7 @@
 
 > **Part of:** [verilog-questions](../) — Verilog HDL learning from zero to FSM-based project  
 > **Tools:** Icarus Verilog · GTKWave · VS Code  
-> **Status:** 🔄 In Progress — Day 1 (Q26 done)
+> **Status:** 🔄 In Progress — Day 2 (Q26-Q27 done)
 
 ---
 
@@ -24,7 +24,7 @@ Verilog equivalent: Flip-flops and registers — hardware that stores values
 | # | File | What It Does | Status |
 |---|------|-------------|--------|
 | Q26 | `q26_dff.v` | D Flip-Flop — basic clocked storage | ✅ Done |
-| Q27 | `q27_dff_sync.v` | D Flip-Flop with synchronous reset | ⬜ Not Started |
+| Q27 | `q27_dff_sync.v` | D Flip-Flop with synchronous reset | ✅ Done |
 | Q28 | `q28_dff_async.v` | D Flip-Flop with asynchronous reset | ⬜ Not Started |
 | Q29 | `q29_register.v` | 4-bit Register | ⬜ Not Started |
 | Q30 | `q30_shift.v` | 4-bit Shift Register | ⬜ Not Started |
@@ -48,52 +48,73 @@ GTKWave is essential from this level onwards — you cannot properly verify sequ
 
 ---
 
-## Q26 — D Flip-Flop
+## Q27 — D Flip-Flop with Synchronous Reset
 
-**What it does:** Captures the value of input `d` on every rising clock edge and holds it at output `q` until the next rising edge.  
-**Real world use:** The fundamental storage element of all digital systems. Registers, memories, pipelines, and state machines are all built from flip-flops.
+**What it does:**  
+Stores one bit like a normal D Flip-Flop, but when **reset is HIGH**, the output becomes `0` on the **next rising edge of the clock**.
 
-**Code:**
+**Real world use:**  
+Initializing registers during system startup, clearing processor registers, and resetting sequential logic safely.
+
+### Code
+
 ```verilog
-module q26_dff(
-    input  clk,
-    input  d,
+module q27_dffsync(
+    input wire clk,
+    input wire d,
+    input wire reset,
     output reg q
 );
-    always @(posedge clk) begin
+
+always @(posedge clk) begin
+    if(reset)
+        q <= 1'b0;
+    else
         q <= d;
-    end
+end
+
 endmodule
 ```
 
-**Behaviour:**
+### Examples
 
-| clock edge | d | q (after edge) |
-|------------|---|----------------|
-| rising     | 0 | 0              |
-| rising     | 1 | 1              |
-| rising     | 1 | 1              |
-| rising     | 0 | 0              |
-
-**Waveform:**
-
-![Q26 Waveform](waveforms/q26_waveform.png)
-
-**What I learned:**  
-`posedge clk` means the always block only triggers on the rising edge of the clock — not continuously like `always @(*)`. The output `q` only changes at clock edges, not instantly when `d` changes. This is what makes it a storage element — it holds the last value captured at the clock edge. Non-blocking `<=` is used here because in sequential circuits all assignments should update simultaneously at the clock edge, not one after another.
+| Reset | Clock | D | Q |
+|--------|-------|---|---|
+| 1 | ↑ | 1 | 0 |
+| 1 | ↑ | 0 | 0 |
+| 0 | ↑ | 1 | 1 |
+| 0 | ↑ | 0 | 0 |
+| 1 | No Edge | X | Holds previous value |
 
 ---
 
-## Key Concepts So Far
+**Waveform:**
+
+![Q27 Waveform](waveforms/q27_waveform.png)
+
+
+### What I Learned
+
+- A **synchronous reset** is checked only at the **rising edge** of the clock.
+- Reset has **higher priority** than the data input.
+- Even if `reset` becomes HIGH, the output does **not** change immediately.
+- The flip-flop waits for the next clock edge before resetting.
+- Sequential testbenches require an automatically generated clock using:
+
+
+---
+
+## Key Concepts Learned So Far
 
 | Concept | What It Means |
-|---------|--------------|
-| `always @(posedge clk)` | Triggers only on rising clock edge |
-| `<=` non-blocking | All assignments update simultaneously at clock edge |
-| `posedge` | Rising edge — 0 to 1 transition |
-| `negedge` | Falling edge — 1 to 0 transition |
-| Flip-flop | Stores one bit across clock cycles |
-| Setup time | Input must be stable before clock edge |
+|----------|---------------|
+| `posedge clk` | Executes only on the rising edge of the clock |
+| D Flip-Flop | Stores one bit of data |
+| Non-blocking (`<=`) | Used for sequential logic |
+| Clock | Synchronizes all sequential hardware |
+| Synchronous Reset | Reset is checked only on the clock edge |
+| Clock Generator | Generates a continuous clock in the testbench |
+
 
 ---
 
@@ -114,5 +135,4 @@ end
 ---
 
 *Updated as questions are completed*  
-*Next: Q27 D Flip-Flop with synchronous reset*  
-*Previous: [Level 3 — Combinational Logic](../level3-combinational/README.md)*
+*Next: Q28 D Flip-Flop with asynchronous reset*  
