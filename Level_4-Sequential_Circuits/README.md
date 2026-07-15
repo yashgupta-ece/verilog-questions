@@ -2,7 +2,7 @@
 
 > **Part of:** [verilog-questions](../) — Verilog HDL learning from zero to FSM-based project  
 > **Tools:** Icarus Verilog · GTKWave · VS Code  
-> **Status:** 🔄 In Progress — Day 4 (Q26–Q28 done)
+> **Status:** 🔄 In Progress — Day 5 (Q26–Q29 done)
 
 ---
 
@@ -31,7 +31,7 @@ Verilog equivalent: `always @(posedge clk)`, non-blocking assignments (`<=`), fl
 | Q26 | `q26_dff.v` | D Flip-Flop | ✅ Done |
 | Q27 | `q27_dffsync.v` | D Flip-Flop with Synchronous Reset | ✅ Done |
 | Q28 | `q28_dffasync.v` | D Flip-Flop with Asynchronous Reset | ✅ Done |
-| Q29 | `q29_register.v` | 4-bit Register | ⬜ Not Started |
+| Q29 | `q29_register.v` | 4-bit Register | ✅ Done |
 | Q30 | `q30_shiftreg.v` | 4-bit Shift Register | ⬜ Not Started |
 | Q31 | `q31_upcounter.v` | 4-bit Up Counter | ⬜ Not Started |
 | Q32 | `q32_updown.v` | 4-bit Up-Down Counter | ⬜ Not Started |
@@ -60,27 +60,29 @@ Useful tips:
 
 ---
 
-## Q26 — D Flip-Flop
+---
+
+## Q29 — 4-bit Register
 
 **What it does:**
 
-Stores a single bit and updates the output only on the **rising edge** of the clock.
+Stores a **4-bit input** and updates the output only on the **rising edge of the clock**. Unlike a single D Flip-Flop, a register stores multiple bits simultaneously.
 
 **Real world use:**
 
-Registers, CPU pipelines, memories, FSM state storage and digital storage elements.
+CPU registers, instruction registers, data buffers, temporary storage in processors, memory interfaces, and digital systems where multiple bits must be stored together.
 
 ### Code
 
 ```verilog
-module q26_dff(
-    input wire clk,
-    input wire d,
-    output reg q
+module q29_register(
+    input wire [3:0] D,
+    input wire clock,
+    output reg [3:0] Q
 );
 
-always @(posedge clk)
-    q <= d;
+always @(posedge clock)
+    Q <= D;
 
 endmodule
 ```
@@ -88,140 +90,68 @@ endmodule
 ### Examples
 
 | Clock | D | Q |
-|------|---|---|
-| ↑ | 0 | 0 |
-| ↑ | 1 | 1 |
-| No Edge | 0 | Holds previous value |
-| No Edge | 1 | Holds previous value |
+|------|------|------|
+| ↑ | 1010 | 1010 |
+| ↑ | 1100 | 1100 |
+| No Edge | 0011 | Holds previous value |
+| No Edge | 1111 | Holds previous value |
 
 ---
 
 **Waveform**
 
 ```md
-![Q26 Waveform](waveforms/q26_waveform.png)
+![Q29 Waveform](waveforms/q29_waveform.png)
 ```
-
-### What I Learned
-
-- A D Flip-Flop stores one bit.
-- Output changes only on the rising edge.
-- Sequential circuits require non-blocking assignments (`<=`).
-- Testbenches need an automatically generated clock.
 
 ---
 
-## Q27 — D Flip-Flop with Synchronous Reset
+### What I Learned
 
-**What it does:**
-
-Stores one bit like a normal D Flip-Flop but clears the output on the **next rising edge** whenever reset is HIGH.
-
-**Real world use:**
-
-Processor reset logic, register initialization and synchronous digital systems.
-
-### Code
+- A register is simply a collection of **multiple D Flip-Flops** sharing the same clock.
+- A 4-bit register stores all four bits **simultaneously** on the rising edge of the clock.
+- Vector assignments allow copying an entire bus using a single statement:
 
 ```verilog
-module q27_dffsync(
-    input wire clk,
-    input wire d,
-    input wire reset,
-    output reg q
-);
-
-always @(posedge clk) begin
-    if(reset)
-        q <= 1'b0;
-    else
-        q <= d;
-end
-
-endmodule
+Q <= D;
 ```
 
-### Examples
+instead of assigning each bit individually.
 
-| Reset | Clock | D | Q |
-|------|------|---|---|
-| 1 | ↑ | 1 | 0 |
-| 1 | ↑ | 0 | 0 |
-| 0 | ↑ | 1 | 1 |
-| 0 | ↑ | 0 | 0 |
-| 1 | No Edge | X | Holds previous value |
+- The output retains its previous value until the next rising clock edge.
+- Registers are the fundamental storage elements used throughout digital systems.
 
 ---
 
-**Waveform**
+## Key Concept
 
-```md
-![Q27 Waveform](waveforms/q27_waveform.png)
+```
+                 4-bit Register
+
+      D3 ─────► D Flip-Flop ─────► Q3
+
+      D2 ─────► D Flip-Flop ─────► Q2
+
+      D1 ─────► D Flip-Flop ─────► Q1
+
+      D0 ─────► D Flip-Flop ─────► Q0
+
+                     ▲
+                     │
+                 Same Clock
 ```
 
-### What I Learned
-
-- Reset is checked **only at the rising edge**.
-- Reset has higher priority than data.
-- The output does **not** change immediately when reset becomes HIGH.
-- The flip-flop waits for the next clock edge.
+All four flip-flops receive the same clock, so every stored bit updates at exactly the same clock edge.
 
 ---
 
-## Q28 — D Flip-Flop with Asynchronous Reset
+### Common Beginner Mistakes
 
-**What it does:**
-
-Stores one bit like a normal D Flip-Flop but resets the output **immediately** whenever reset becomes HIGH, without waiting for a clock edge.
-
-**Real world use:**
-
-Power-on reset circuits, emergency shutdown logic, FPGA/ASIC initialization and watchdog reset systems.
-
-### Code
-
-```verilog
-module q28_dffasync(
-    input wire clk,
-    input wire d,
-    input wire reset,
-    output reg q
-);
-
-always @(posedge clk or posedge reset) begin
-    if(reset)
-        q <= 1'b0;
-    else
-        q <= d;
-end
-
-endmodule
-```
-
-### Examples
-
-| Reset | Clock | D | Q |
-|------|------|---|---|
-| 1 | No Edge | X | 0 immediately |
-| 1 | ↑ | X | 0 |
-| 0 | ↑ | 1 | 1 |
-| 0 | ↑ | 0 | 0 |
-
----
-
-**Waveform**
-
-```md
-![Q28 Waveform](waveforms/q28_waveform.png)
-```
-
-### What I Learned
-
-- Asynchronous reset acts immediately.
-- The sensitivity list includes both the clock and reset.
-- The flip-flop does **not** wait for a clock edge to reset.
-- The logic inside the always block is almost identical to synchronous reset—the sensitivity list changes the behavior.
-- Asynchronous reset is commonly used for power-on initialization and emergency reset circuits.
+- Declaring `Q` as `wire` instead of `reg`.
+- Forgetting to initialize the clock in the testbench.
+- Manually driving the clock inside the `initial` block while also using a clock generator.
+- Forgetting that the register updates **only** on the rising edge.
+- Assigning individual bits unnecessarily instead of using vector assignment (`Q <= D;`).
 
 ---
 
@@ -266,4 +196,4 @@ After completing these questions, I can:
 
 *Updated as questions are completed.*
 
-*Next: Q29 — 4-bit Register*
+*Next: Q30 — 4-bit Shift Register**

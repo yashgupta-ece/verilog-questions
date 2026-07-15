@@ -1,0 +1,49 @@
+$date
+	Wed Jul 15 23:13:11 2026
+$end
+$version
+	Icarus Verilog
+$end
+$timescale
+	1s
+$end
+$scope module tb_q29 $end
+$var wire 4 ! Q [3:0] $end
+$var reg 4 " D [3:0] $end
+$var reg 1 # clock $end
+$scope module uut $end
+$var wire 4 $ D [3:0] $end
+$var wire 1 # clock $end
+$var reg 4 % Q [3:0] $end
+$upscope $end
+$upscope $end
+$enddefinitions $end
+$comment Show the parameter values. $end
+$dumpall
+$end
+#0
+$dumpvars
+bx %
+b1010 $
+0#
+b1010 "
+bx !
+$end
+#5
+b1010 !
+b1010 %
+1#
+#10
+0#
+b1100 "
+b1100 $
+#15
+b1100 !
+b1100 %
+1#
+#16
+b11 "
+b11 $
+#20
+0#
+#21
