@@ -2,7 +2,7 @@
 
 > **Part of:** [verilog-questions](../) — Verilog HDL learning from zero to FSM-based project  
 > **Tools:** Icarus Verilog · GTKWave · VS Code  
-> **Status:** 🔄 In Progress — Day 5 (Q26–Q29 done)
+> **Status:** 🔄 In Progress — Day 5 (Q26–Q30 done)
 
 ---
 
@@ -32,7 +32,7 @@ Verilog equivalent: `always @(posedge clk)`, non-blocking assignments (`<=`), fl
 | Q27 | `q27_dffsync.v` | D Flip-Flop with Synchronous Reset | ✅ Done |
 | Q28 | `q28_dffasync.v` | D Flip-Flop with Asynchronous Reset | ✅ Done |
 | Q29 | `q29_register.v` | 4-bit Register | ✅ Done |
-| Q30 | `q30_shiftreg.v` | 4-bit Shift Register | ⬜ Not Started |
+| Q30 | `q30_shiftreg.v` | 4-bit Shift Register | ✅ Done |
 | Q31 | `q31_upcounter.v` | 4-bit Up Counter | ⬜ Not Started |
 | Q32 | `q32_updown.v` | 4-bit Up-Down Counter | ⬜ Not Started |
 | Q33 | `q33_decade.v` | Decade Counter | ⬜ Not Started |
@@ -62,98 +62,106 @@ Useful tips:
 
 ---
 
-## Q29 — 4-bit Register
+## Q30 — 4-bit Shift Register
 
 **What it does:**
 
-Stores a **4-bit input** and updates the output only on the **rising edge of the clock**. Unlike a single D Flip-Flop, a register stores multiple bits simultaneously.
+Stores a 4-bit value and shifts all bits **one position to the left** on every rising edge of the clock. The new serial input bit enters at the Least Significant Bit (LSB), while the Most Significant Bit (MSB) is discarded.
 
 **Real world use:**
 
-CPU registers, instruction registers, data buffers, temporary storage in processors, memory interfaces, and digital systems where multiple bits must be stored together.
+Shift registers are widely used in serial communication (UART, SPI, I²C), LED running patterns, digital displays, data buffering, serialization/deserialization, and digital signal processing.
 
 ### Code
 
 ```verilog
-module q29_register(
-    input wire [3:0] D,
-    input wire clock,
+module q30_shiftregister(
+    input wire D,
+    input wire Clock,
     output reg [3:0] Q
 );
 
-always @(posedge clock)
-    Q <= D;
+always @(posedge Clock)
+begin
+    Q <= {Q[2:0], D};
+end
 
 endmodule
 ```
 
-### Examples
+### Example
 
-| Clock | D | Q |
-|------|------|------|
-| ↑ | 1010 | 1010 |
-| ↑ | 1100 | 1100 |
-| No Edge | 0011 | Holds previous value |
-| No Edge | 1111 | Holds previous value |
+Assume the register initially contains:
+
+```
+Q = 0000
+```
+
+| Clock Edge | D | New Q |
+|------------|---|--------|
+| ↑ | 1 | 0001 |
+| ↑ | 1 | 0011 |
+| ↑ | 0 | 0110 |
+| ↑ | 1 | 1101 |
+| ↑ | 0 | 1010 |
 
 ---
 
 **Waveform**
 
 ```md
-![Q29 Waveform](waveforms/q29_waveform.png)
+![Q30 Waveform](waveforms/q30_waveform.png)
 ```
 
 ---
 
 ### What I Learned
 
-- A register is simply a collection of **multiple D Flip-Flops** sharing the same clock.
-- A 4-bit register stores all four bits **simultaneously** on the rising edge of the clock.
-- Vector assignments allow copying an entire bus using a single statement:
+- A shift register is built using multiple D Flip-Flops connected in series.
+- On every rising edge, all stored bits move one position to the left.
+- The newest serial input enters at the Least Significant Bit (LSB).
+- Concatenation (`{}`) provides a clean way to shift data.
+
+Instead of writing:
 
 ```verilog
-Q <= D;
+Q[3] <= Q[2];
+Q[2] <= Q[1];
+Q[1] <= Q[0];
+Q[0] <= D;
 ```
 
-instead of assigning each bit individually.
+Verilog allows the same operation using:
 
-- The output retains its previous value until the next rising clock edge.
-- Registers are the fundamental storage elements used throughout digital systems.
+```verilog
+Q <= {Q[2:0], D};
+```
+
+This makes the code shorter, cleaner, and easier to understand.
 
 ---
 
-## Key Concept
+## Hardware Insight
 
 ```
-                 4-bit Register
-
-      D3 ─────► D Flip-Flop ─────► Q3
-
-      D2 ─────► D Flip-Flop ─────► Q2
-
-      D1 ─────► D Flip-Flop ─────► Q1
-
-      D0 ─────► D Flip-Flop ─────► Q0
-
-                     ▲
-                     │
-                 Same Clock
+           +----+     +----+     +----+     +----+
+D -------> | FF | --> | FF | --> | FF | --> | FF |
+           +----+     +----+     +----+     +----+
+              |           |           |           |
+             Q0          Q1          Q2          Q3
 ```
 
-All four flip-flops receive the same clock, so every stored bit updates at exactly the same clock edge.
+Each clock pulse shifts the stored data by one position.
 
 ---
 
 ### Common Beginner Mistakes
 
-- Declaring `Q` as `wire` instead of `reg`.
-- Forgetting to initialize the clock in the testbench.
-- Manually driving the clock inside the `initial` block while also using a clock generator.
-- Forgetting that the register updates **only** on the rising edge.
-- Assigning individual bits unnecessarily instead of using vector assignment (`Q <= D;`).
-
----
+- Forgetting to use non-blocking assignment (`<=`).
+- Using `Q <= {Q, D};` (creates a 5-bit value instead of 4 bits).
+- Using `Q[3:1]` instead of `Q[2:0]`.
+- Forgetting that shifting happens **only** on the rising edge of the clock.
+- Forgetting delays (`#`) in the testbench, causing all input changes to occur at simulation time 0.
 
 ## Key Concepts Learned So Far
 
@@ -169,15 +177,6 @@ All four flip-flops receive the same clock, so every stored bit updates at exact
 | Clock Generator | Generates a periodic clock in the testbench |
 
 ---
-
-## Common Beginner Mistakes
-
-- Using `=` instead of `<=` inside sequential logic
-- Using `assign` inside an `always` block
-- Forgetting to initialize the clock
-- Driving the clock manually instead of using a clock generator
-- Using `=` instead of `==` inside `if` conditions
-- Forgetting that asynchronous reset requires `posedge reset` in the sensitivity list
 
 ---
 
@@ -196,4 +195,4 @@ After completing these questions, I can:
 
 *Updated as questions are completed.*
 
-*Next: Q30 — 4-bit Shift Register**
+**Next: Q31 — 4-bit Up Counter**
