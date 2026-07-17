@@ -2,7 +2,7 @@
 
 > **Part of:** [verilog-questions](../) — Verilog HDL learning from zero to FSM-based project  
 > **Tools:** Icarus Verilog · GTKWave · VS Code  
-> **Status:** 🔄 In Progress — Day 5 (Q26–Q30 done)
+> **Status:** 🔄 In Progress — Day 6 (Q26–Q31 done)
 
 ---
 
@@ -33,7 +33,7 @@ Verilog equivalent: `always @(posedge clk)`, non-blocking assignments (`<=`), fl
 | Q28 | `q28_dffasync.v` | D Flip-Flop with Asynchronous Reset | ✅ Done |
 | Q29 | `q29_register.v` | 4-bit Register | ✅ Done |
 | Q30 | `q30_shiftreg.v` | 4-bit Shift Register | ✅ Done |
-| Q31 | `q31_upcounter.v` | 4-bit Up Counter | ⬜ Not Started |
+| Q31 | `q31_upcounter.v` | 4-bit Up Counter | ✅ Done |
 | Q32 | `q32_updown.v` | 4-bit Up-Down Counter | ⬜ Not Started |
 | Q33 | `q33_decade.v` | Decade Counter | ⬜ Not Started |
 | Q34 | `q34_clkdivider.v` | Clock Divider | ⬜ Not Started |
@@ -60,30 +60,30 @@ Useful tips:
 
 ---
 
----
-
-## Q30 — 4-bit Shift Register
+## Q31 — 4-bit Up Counter
 
 **What it does:**
 
-Stores a 4-bit value and shifts all bits **one position to the left** on every rising edge of the clock. The new serial input bit enters at the Least Significant Bit (LSB), while the Most Significant Bit (MSB) is discarded.
+A 4-bit synchronous up counter increments its value by **1** on every rising edge of the clock. After reaching its maximum value (`1111`), it wraps around to `0000` due to 4-bit overflow.
 
 **Real world use:**
 
-Shift registers are widely used in serial communication (UART, SPI, I²C), LED running patterns, digital displays, data buffering, serialization/deserialization, and digital signal processing.
+Counters are one of the most widely used sequential circuits. They are used in digital clocks, timers, event counters, traffic light controllers, frequency dividers, processors, and embedded systems.
 
 ### Code
 
 ```verilog
-module q30_shiftregister(
-    input wire D,
+module q31(
     input wire Clock,
-    output reg [3:0] Q
+    output reg [3:0] Counter
 );
+
+initial
+    Counter = 4'b0000;
 
 always @(posedge Clock)
 begin
-    Q <= {Q[2:0], D};
+    Counter <= Counter + 4'b0001;
 end
 
 endmodule
@@ -91,77 +91,78 @@ endmodule
 
 ### Example
 
-Assume the register initially contains:
+Initial value:
 
 ```
-Q = 0000
+Counter = 0000
 ```
 
-| Clock Edge | D | New Q |
-|------------|---|--------|
-| ↑ | 1 | 0001 |
-| ↑ | 1 | 0011 |
-| ↑ | 0 | 0110 |
-| ↑ | 1 | 1101 |
-| ↑ | 0 | 1010 |
+| Rising Edge | Counter |
+|-------------|---------|
+| ↑ | 0001 |
+| ↑ | 0010 |
+| ↑ | 0011 |
+| ↑ | 0100 |
+| ↑ | 0101 |
+| ... | ... |
+| ↑ | 1111 |
+| ↑ | 0000 |
+
+The counter automatically wraps back to zero after reaching `1111`.
 
 ---
 
-**Waveform**
+### Waveform
 
 ```md
-![Q30 Waveform](waveforms/q30_waveform.png)
+![Q31 Waveform](waveforms/q31_waveform.png)
 ```
 
 ---
 
 ### What I Learned
 
-- A shift register is built using multiple D Flip-Flops connected in series.
-- On every rising edge, all stored bits move one position to the left.
-- The newest serial input enters at the Least Significant Bit (LSB).
-- Concatenation (`{}`) provides a clean way to shift data.
-
-Instead of writing:
-
-```verilog
-Q[3] <= Q[2];
-Q[2] <= Q[1];
-Q[1] <= Q[0];
-Q[0] <= D;
-```
-
-Verilog allows the same operation using:
-
-```verilog
-Q <= {Q[2:0], D};
-```
-
-This makes the code shorter, cleaner, and easier to understand.
+- A counter is a sequential circuit that updates its own value.
+- Unlike registers and shift registers, a counter does not require a data input.
+- Non-blocking assignment (`<=`) is used for sequential logic.
+- A 4-bit counter can represent values from **0 to 15**.
+- When the count exceeds `1111`, overflow occurs and the value wraps around to `0000`.
+- Registers without initialization start as `xxxx` in simulation.
+- An `initial` block can initialize values for simulation, while real hardware typically uses a reset signal.
 
 ---
 
-## Hardware Insight
+### Hardware Insight
 
 ```
-           +----+     +----+     +----+     +----+
-D -------> | FF | --> | FF | --> | FF | --> | FF |
-           +----+     +----+     +----+     +----+
-              |           |           |           |
-             Q0          Q1          Q2          Q3
+        +----------------------+
+Clock ->|     4-bit Counter    |
+        |                      |
+        | Counter = Counter+1  |
+        +----------------------+
+                 |
+                 ▼
+            0000
+            0001
+            0010
+            0011
+            0100
+             ...
+            1111
+            0000
 ```
 
-Each clock pulse shifts the stored data by one position.
+Each rising edge increases the stored count by one.
 
 ---
 
 ### Common Beginner Mistakes
 
-- Forgetting to use non-blocking assignment (`<=`).
-- Using `Q <= {Q, D};` (creates a 5-bit value instead of 4 bits).
-- Using `Q[3:1]` instead of `Q[2:0]`.
-- Forgetting that shifting happens **only** on the rising edge of the clock.
-- Forgetting delays (`#`) in the testbench, causing all input changes to occur at simulation time 0.
+- Forgetting to declare the output as `reg`.
+- Using blocking assignment (`=`) instead of non-blocking (`<=`).
+- Forgetting to initialize the counter, resulting in `xxxx` during simulation.
+- Assuming the counter stops at `1111`; instead, it wraps back to `0000`.
+- Driving the counter from the testbench instead of letting it count automatically.
 
 ## Key Concepts Learned So Far
 
@@ -195,4 +196,4 @@ After completing these questions, I can:
 
 *Updated as questions are completed.*
 
-**Next: Q31 — 4-bit Up Counter**
+**Next: Q31 — 4-bit Up-Down Counter**
