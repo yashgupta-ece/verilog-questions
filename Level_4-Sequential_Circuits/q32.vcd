@@ -1,0 +1,76 @@
+$date
+	Sat Jul 18 23:24:46 2026
+$end
+$version
+	Icarus Verilog
+$end
+$timescale
+	1s
+$end
+$scope module tb_q32 $end
+$var wire 4 ! Counter [3:0] $end
+$var reg 1 " Clock $end
+$var reg 1 # Reset $end
+$var reg 1 $ UpDown $end
+$scope module uut $end
+$var wire 1 " Clock $end
+$var wire 1 # Reset $end
+$var wire 1 $ UpDown $end
+$var reg 4 % Counter [3:0] $end
+$upscope $end
+$upscope $end
+$enddefinitions $end
+$comment Show the parameter values. $end
+$dumpall
+$end
+#0
+$dumpvars
+bx %
+1$
+0#
+0"
+bx !
+$end
+#5
+1"
+#10
+0"
+#15
+1"
+#20
+0"
+0$
+1#
+#25
+b0 !
+b0 %
+1"
+#30
+0"
+1$
+0#
+#35
+b1 !
+b1 %
+1"
+#40
+0"
+#45
+b10 !
+b10 %
+1"
+#50
+0"
+#55
+b11 !
+b11 %
+1"
+#60
+0"
+1#
+#65
+b0 !
+b0 %
+1"
+#70
+0"

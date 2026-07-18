@@ -2,7 +2,7 @@
 
 > **Part of:** [verilog-questions](../) — Verilog HDL learning from zero to FSM-based project  
 > **Tools:** Icarus Verilog · GTKWave · VS Code  
-> **Status:** 🔄 In Progress — Day 6 (Q26–Q31 done)
+> **Status:** 🔄 In Progress — Day 7 (Q26–Q32 done)
 
 ---
 
@@ -34,7 +34,7 @@ Verilog equivalent: `always @(posedge clk)`, non-blocking assignments (`<=`), fl
 | Q29 | `q29_register.v` | 4-bit Register | ✅ Done |
 | Q30 | `q30_shiftreg.v` | 4-bit Shift Register | ✅ Done |
 | Q31 | `q31_upcounter.v` | 4-bit Up Counter | ✅ Done |
-| Q32 | `q32_updown.v` | 4-bit Up-Down Counter | ⬜ Not Started |
+| Q32 | `q32_updowncounter.v` | 4-bit Up-Down Counter | ✅ Done |
 | Q33 | `q33_decade.v` | Decade Counter | ⬜ Not Started |
 | Q34 | `q34_clkdivider.v` | Clock Divider | ⬜ Not Started |
 | Q35 | `q35_piso.v` | PISO Shift Register | ⬜ Not Started |
@@ -60,34 +60,58 @@ Useful tips:
 
 ---
 
-## Q31 — 4-bit Up Counter
+---
+
+## Q32 — 4-bit Up/Down Counter
 
 **What it does:**
 
-A 4-bit synchronous up counter increments its value by **1** on every rising edge of the clock. After reaching its maximum value (`1111`), it wraps around to `0000` due to 4-bit overflow.
+A 4-bit synchronous Up/Down Counter increments or decrements its value on every rising edge of the clock depending on the `UpDown` control signal. A synchronous reset initializes the counter to `0000`.
 
-**Real world use:**
+- `Reset = 1` → Counter resets to `0000`
+- `Reset = 0` and `UpDown = 1` → Counter counts up
+- `Reset = 0` and `UpDown = 0` → Counter counts down
 
-Counters are one of the most widely used sequential circuits. They are used in digital clocks, timers, event counters, traffic light controllers, frequency dividers, processors, and embedded systems.
+---
+
+### Real World Use
+
+Up/Down counters are used in:
+
+- Elevator floor controllers
+- Digital volume control
+- Position tracking systems
+- Motor speed control
+- Industrial automation
+- Robotics
+- Digital instruments
+
+---
 
 ### Code
 
 ```verilog
-module q31(
+module q32(
     input wire Clock,
+    input wire Reset,
+    input wire UpDown,
     output reg [3:0] Counter
 );
 
-initial
-    Counter = 4'b0000;
-
 always @(posedge Clock)
 begin
-    Counter <= Counter + 4'b0001;
+    if (Reset)
+        Counter <= 4'b0000;
+    else if (UpDown)
+        Counter <= Counter + 4'b0001;
+    else
+        Counter <= Counter - 4'b0001;
 end
 
 endmodule
 ```
+
+---
 
 ### Example
 
@@ -97,87 +121,116 @@ Initial value:
 Counter = 0000
 ```
 
+#### Counting Up (`UpDown = 1`)
+
 | Rising Edge | Counter |
 |-------------|---------|
 | ↑ | 0001 |
 | ↑ | 0010 |
 | ↑ | 0011 |
 | ↑ | 0100 |
-| ↑ | 0101 |
-| ... | ... |
-| ↑ | 1111 |
-| ↑ | 0000 |
 
-The counter automatically wraps back to zero after reaching `1111`.
+#### Counting Down (`UpDown = 0`)
+
+| Rising Edge | Counter |
+|-------------|---------|
+| ↑ | 0011 |
+| ↑ | 0010 |
+| ↑ | 0001 |
+| ↑ | 0000 |
+| ↑ | 1111 *(Underflow)* |
+
+#### Reset
+
+| Reset | Counter |
+|-------|---------|
+| 1 | 0000 |
 
 ---
 
 ### Waveform
 
 ```md
-![Q31 Waveform](waveforms/q31_waveform.png)
+![Q32 Waveform](waveforms/q32_waveform.png)
 ```
 
 ---
 
 ### What I Learned
 
-- A counter is a sequential circuit that updates its own value.
-- Unlike registers and shift registers, a counter does not require a data input.
-- Non-blocking assignment (`<=`) is used for sequential logic.
-- A 4-bit counter can represent values from **0 to 15**.
-- When the count exceeds `1111`, overflow occurs and the value wraps around to `0000`.
-- Registers without initialization start as `xxxx` in simulation.
-- An `initial` block can initialize values for simulation, while real hardware typically uses a reset signal.
+- A counter can count in both directions.
+- A control signal (`UpDown`) determines whether to increment or decrement.
+- Reset has the highest priority in sequential logic.
+- A synchronous reset is checked only on the rising edge of the clock.
+- Binary counters naturally wrap around because of fixed register width.
+- Underflow:
+  - `0000 - 1 = 1111`
+- Overflow:
+  - `1111 + 1 = 0000`
 
 ---
 
 ### Hardware Insight
 
 ```
-        +----------------------+
-Clock ->|     4-bit Counter    |
-        |                      |
-        | Counter = Counter+1  |
-        +----------------------+
-                 |
-                 ▼
-            0000
-            0001
-            0010
-            0011
-            0100
-             ...
-            1111
-            0000
+                +----------------------------+
+Clock --------->|                            |
+Reset --------->|                            |
+UpDown -------->|    4-bit Up/Down Counter   |------> Counter
+                |                            |
+                +----------------------------+
+
+Logic:
+
+Clock ↑
+    │
+    ▼
+Reset?
+ │
+ ├── Yes → Counter = 0000
+ │
+ └── No
+      │
+      ▼
+ UpDown?
+ │
+ ├── 1 → Counter = Counter + 1
+ │
+ └── 0 → Counter = Counter - 1
 ```
 
-Each rising edge increases the stored count by one.
+---
+
+### Truth Table
+
+| Reset | UpDown | Operation |
+|:----:|:------:|-----------|
+| 1 | X | Reset Counter |
+| 0 | 1 | Count Up |
+| 0 | 0 | Count Down |
 
 ---
 
 ### Common Beginner Mistakes
 
-- Forgetting to declare the output as `reg`.
+- Forgetting that reset has the highest priority.
 - Using blocking assignment (`=`) instead of non-blocking (`<=`).
-- Forgetting to initialize the counter, resulting in `xxxx` during simulation.
-- Assuming the counter stops at `1111`; instead, it wraps back to `0000`.
-- Driving the counter from the testbench instead of letting it count automatically.
-
-## Key Concepts Learned So Far
-
-| Concept | Meaning |
-|----------|---------|
-| `always @(posedge clk)` | Sequential logic updates on rising clock edge |
-| `always @(posedge clk or posedge reset)` | Responds to either clock or reset |
-| `<=` | Non-blocking assignment used in sequential logic |
-| D Flip-Flop | Stores one bit |
-| Clock | Synchronizes digital hardware |
-| Synchronous Reset | Reset occurs only on a clock edge |
-| Asynchronous Reset | Reset occurs immediately |
-| Clock Generator | Generates a periodic clock in the testbench |
+- Forgetting that subtraction from `0000` wraps to `1111`.
+- Assuming the counter saturates at `0000` or `1111`.
+- Forgetting to test both count-up and count-down operations in the testbench.
 
 ---
+
+### Key Concepts
+
+- Sequential Logic
+- Synchronous Reset
+- Up/Down Counter
+- Register Feedback
+- Overflow
+- Underflow
+- Non-blocking Assignment (`<=`)
+- Binary Arithmetic
 
 ---
 
@@ -196,4 +249,4 @@ After completing these questions, I can:
 
 *Updated as questions are completed.*
 
-**Next: Q31 — 4-bit Up-Down Counter**
+**Next: Q32 — Decade Counter**
