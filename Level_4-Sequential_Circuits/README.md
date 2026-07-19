@@ -2,7 +2,7 @@
 
 > **Part of:** [verilog-questions](../) — Verilog HDL learning from zero to FSM-based project  
 > **Tools:** Icarus Verilog · GTKWave · VS Code  
-> **Status:** 🔄 In Progress — Day 7 (Q26–Q32 done)
+> **Status:** 🔄 In Progress — Day 8 (Q26–Q33 done)
 
 ---
 
@@ -35,7 +35,7 @@ Verilog equivalent: `always @(posedge clk)`, non-blocking assignments (`<=`), fl
 | Q30 | `q30_shiftreg.v` | 4-bit Shift Register | ✅ Done |
 | Q31 | `q31_upcounter.v` | 4-bit Up Counter | ✅ Done |
 | Q32 | `q32_updowncounter.v` | 4-bit Up-Down Counter | ✅ Done |
-| Q33 | `q33_decade.v` | Decade Counter | ⬜ Not Started |
+| Q33 | `q33_decade.v` | Decade Counter | ✅ Done |
 | Q34 | `q34_clkdivider.v` | Clock Divider | ⬜ Not Started |
 | Q35 | `q35_piso.v` | PISO Shift Register | ⬜ Not Started |
 
@@ -62,39 +62,38 @@ Useful tips:
 
 ---
 
-## Q32 — 4-bit Up/Down Counter
+## Q33 — 4-bit Decade (MOD-10) Counter
 
 **What it does:**
 
-A 4-bit synchronous Up/Down Counter increments or decrements its value on every rising edge of the clock depending on the `UpDown` control signal. A synchronous reset initializes the counter to `0000`.
+A Decade Counter (also called a MOD-10 Counter) counts from **0 to 9** in binary. After reaching `1001` (decimal 9), it resets back to `0000` on the next rising edge of the clock. A synchronous reset initializes the counter to `0000`.
 
 - `Reset = 1` → Counter resets to `0000`
-- `Reset = 0` and `UpDown = 1` → Counter counts up
-- `Reset = 0` and `UpDown = 0` → Counter counts down
+- `Reset = 0` → Counter increments every rising edge
+- After `1001` → Counter wraps back to `0000`
 
 ---
 
-### Real World Use
+### Real World Applications
 
-Up/Down counters are used in:
+Decade counters are widely used in:
 
-- Elevator floor controllers
-- Digital volume control
-- Position tracking systems
-- Motor speed control
-- Industrial automation
-- Robotics
-- Digital instruments
+- Digital clocks
+- Stopwatches
+- Seven-segment display drivers
+- Electronic scoreboards
+- Frequency counters
+- Event counters
+- Digital measurement instruments
 
 ---
 
 ### Code
 
 ```verilog
-module q32(
-    input wire Clock,
+module q33(
     input wire Reset,
-    input wire UpDown,
+    input wire Clock,
     output reg [3:0] Counter
 );
 
@@ -102,10 +101,10 @@ always @(posedge Clock)
 begin
     if (Reset)
         Counter <= 4'b0000;
-    else if (UpDown)
-        Counter <= Counter + 4'b0001;
+    else if (Counter == 4'b1001)
+        Counter <= 4'b0000;
     else
-        Counter <= Counter - 4'b0001;
+        Counter <= Counter + 1;
 end
 
 endmodule
@@ -113,78 +112,101 @@ endmodule
 
 ---
 
-### Example
+### Counting Sequence
 
-Initial value:
+| Decimal | Binary |
+|:------:|:------:|
+| 0 | 0000 |
+| 1 | 0001 |
+| 2 | 0010 |
+| 3 | 0011 |
+| 4 | 0100 |
+| 5 | 0101 |
+| 6 | 0110 |
+| 7 | 0111 |
+| 8 | 1000 |
+| 9 | 1001 |
+| Next | 0000 |
+
+---
+
+### Example Waveform
 
 ```
-Counter = 0000
+Clock ↑
+
+0000
+ ↓
+0001
+ ↓
+0010
+ ↓
+0011
+ ↓
+0100
+ ↓
+0101
+ ↓
+0110
+ ↓
+0111
+ ↓
+1000
+ ↓
+1001
+ ↓
+0000
+ ↓
+0001
 ```
-
-#### Counting Up (`UpDown = 1`)
-
-| Rising Edge | Counter |
-|-------------|---------|
-| ↑ | 0001 |
-| ↑ | 0010 |
-| ↑ | 0011 |
-| ↑ | 0100 |
-
-#### Counting Down (`UpDown = 0`)
-
-| Rising Edge | Counter |
-|-------------|---------|
-| ↑ | 0011 |
-| ↑ | 0010 |
-| ↑ | 0001 |
-| ↑ | 0000 |
-| ↑ | 1111 *(Underflow)* |
-
-#### Reset
-
-| Reset | Counter |
-|-------|---------|
-| 1 | 0000 |
 
 ---
 
 ### Waveform
 
 ```md
-![Q32 Waveform](waveforms/q32_waveform.png)
+![Q33 Waveform](waveforms/q33_waveform.png)
 ```
 
 ---
 
 ### What I Learned
 
-- A counter can count in both directions.
-- A control signal (`UpDown`) determines whether to increment or decrement.
-- Reset has the highest priority in sequential logic.
-- A synchronous reset is checked only on the rising edge of the clock.
-- Binary counters naturally wrap around because of fixed register width.
-- Underflow:
-  - `0000 - 1 = 1111`
-- Overflow:
-  - `1111 + 1 = 0000`
+- A Decade Counter is also called a **MOD-10 Counter**.
+- It counts only **10 states (0–9)**.
+- A comparator checks whether the counter has reached `1001`.
+- After reaching `9`, the counter resets to `0000`.
+- Synchronous reset has the highest priority.
+- Sequential logic can combine arithmetic and decision-making.
 
 ---
 
 ### Hardware Insight
 
 ```
-                +----------------------------+
-Clock --------->|                            |
-Reset --------->|                            |
-UpDown -------->|    4-bit Up/Down Counter   |------> Counter
-                |                            |
-                +----------------------------+
+                 +----------------------+
+Clock ---------->|                      |
+Reset ---------->|                      |
+                 |   Comparator (==9)   |
+                 |          │           |
+                 |          ▼           |
+                 |   Increment or Reset |
+                 |          │           |
+                 |      4-bit Register  |
+                 +----------------------+
+                            │
+                            ▼
+                         Counter
+```
 
-Logic:
+---
 
+### Flowchart
+
+```
 Clock ↑
-    │
-    ▼
+   │
+   ▼
 Reset?
  │
  ├── Yes → Counter = 0000
@@ -192,45 +214,45 @@ Reset?
  └── No
       │
       ▼
- UpDown?
+Counter == 9 ?
  │
- ├── 1 → Counter = Counter + 1
+ ├── Yes → Counter = 0000
  │
- └── 0 → Counter = Counter - 1
+ └── No → Counter = Counter + 1
 ```
 
 ---
 
 ### Truth Table
 
-| Reset | UpDown | Operation |
-|:----:|:------:|-----------|
-| 1 | X | Reset Counter |
-| 0 | 1 | Count Up |
-| 0 | 0 | Count Down |
+| Reset | Counter = 9 | Next Counter |
+|:----:|:-----------:|:------------:|
+| 1 | X | 0000 |
+| 0 | Yes | 0000 |
+| 0 | No | Counter + 1 |
 
 ---
 
 ### Common Beginner Mistakes
 
-- Forgetting that reset has the highest priority.
-- Using blocking assignment (`=`) instead of non-blocking (`<=`).
-- Forgetting that subtraction from `0000` wraps to `1111`.
-- Assuming the counter saturates at `0000` or `1111`.
-- Forgetting to test both count-up and count-down operations in the testbench.
+- Forgetting to compare with `1001` (decimal 9).
+- Allowing the counter to continue to `1010` (decimal 10).
+- Forgetting that reset has higher priority than counting.
+- Using blocking assignment (`=`) instead of non-blocking (`<=`) in sequential logic.
+- Not running the simulation long enough to observe the wrap from `9` back to `0`.
 
 ---
 
 ### Key Concepts
 
 - Sequential Logic
-- Synchronous Reset
-- Up/Down Counter
+- MOD-10 Counter
+- Decade Counter
+- Binary Counting
+- Comparator
 - Register Feedback
-- Overflow
-- Underflow
+- Synchronous Reset
 - Non-blocking Assignment (`<=`)
-- Binary Arithmetic
 
 ---
 
@@ -249,4 +271,4 @@ After completing these questions, I can:
 
 *Updated as questions are completed.*
 
-**Next: Q32 — Decade Counter**
+**Next: Q32 — Clock Divider**
