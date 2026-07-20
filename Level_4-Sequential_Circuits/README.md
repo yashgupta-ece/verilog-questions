@@ -2,7 +2,7 @@
 
 > **Part of:** [verilog-questions](../) — Verilog HDL learning from zero to FSM-based project  
 > **Tools:** Icarus Verilog · GTKWave · VS Code  
-> **Status:** 🔄 In Progress — Day 8 (Q26–Q33 done)
+> **Status:** 🔄 In Progress — Day 9 (Q26–Q34 done)
 
 ---
 
@@ -36,7 +36,7 @@ Verilog equivalent: `always @(posedge clk)`, non-blocking assignments (`<=`), fl
 | Q31 | `q31_upcounter.v` | 4-bit Up Counter | ✅ Done |
 | Q32 | `q32_updowncounter.v` | 4-bit Up-Down Counter | ✅ Done |
 | Q33 | `q33_decade.v` | Decade Counter | ✅ Done |
-| Q34 | `q34_clkdivider.v` | Clock Divider | ⬜ Not Started |
+| Q34 | `q34_clkdivider.v` | Clock Divider | ✅ Done |
 | Q35 | `q35_piso.v` | PISO Shift Register | ⬜ Not Started |
 
 ---
@@ -62,49 +62,62 @@ Useful tips:
 
 ---
 
-## Q33 — 4-bit Decade (MOD-10) Counter
+# Q34 - Clock Divider
 
-**What it does:**
-
-A Decade Counter (also called a MOD-10 Counter) counts from **0 to 9** in binary. After reaching `1001` (decimal 9), it resets back to `0000` on the next rising edge of the clock. A synchronous reset initializes the counter to `0000`.
-
-- `Reset = 1` → Counter resets to `0000`
-- `Reset = 0` → Counter increments every rising edge
-- After `1001` → Counter wraps back to `0000`
+## 📌 Aim
+Design a **Clock Divider** in Verilog that generates a slower clock signal from a faster input clock by using a 2-bit counter.
 
 ---
 
-### Real World Applications
+## 📖 Theory
 
-Decade counters are widely used in:
+A Clock Divider reduces the frequency of an input clock by counting clock cycles and toggling an output signal after a fixed number of counts.
 
-- Digital clocks
-- Stopwatches
-- Seven-segment display drivers
-- Electronic scoreboards
-- Frequency counters
-- Event counters
-- Digital measurement instruments
+In this design:
+
+- A **2-bit counter** counts from `0` to `3`.
+- When the counter reaches `3`, it:
+  - Resets back to `0`.
+  - Toggles the output clock (`Slowclk`).
+- This produces a clock signal with a lower frequency than the original input clock.
+
+This concept is widely used in digital systems for generating slower clocks required by LEDs, displays, timers, communication protocols, and other peripherals.
 
 ---
 
-### Code
+## 🛠️ Components Used
+
+- Sequential `always @(posedge Clock)` block
+- 2-bit Register (Counter)
+- Reset Logic
+- Toggle Operation (`~Slowclk`)
+- Non-blocking Assignments (`<=`)
+
+---
+
+## 💻 Verilog Code
 
 ```verilog
-module q33(
-    input wire Reset,
+module q34 (
     input wire Clock,
-    output reg [3:0] Counter
+    input wire Reset,
+    output reg Slowclk
 );
 
-always @(posedge Clock)
-begin
-    if (Reset)
-        Counter <= 4'b0000;
-    else if (Counter == 4'b1001)
-        Counter <= 4'b0000;
-    else
+reg [1:0] Counter;
+
+always @(posedge Clock) begin
+    if (Reset) begin
+        Counter <= 0;
+        Slowclk <= 0;
+    end
+    else if (Counter == 3) begin
+        Slowclk <= ~Slowclk;
+        Counter <= 0;
+    end
+    else begin
         Counter <= Counter + 1;
+    end
 end
 
 endmodule
@@ -112,163 +125,84 @@ endmodule
 
 ---
 
-### Counting Sequence
+## ▶️ Simulation
 
-| Decimal | Binary |
-|:------:|:------:|
-| 0 | 0000 |
-| 1 | 0001 |
-| 2 | 0010 |
-| 3 | 0011 |
-| 4 | 0100 |
-| 5 | 0101 |
-| 6 | 0110 |
-| 7 | 0111 |
-| 8 | 1000 |
-| 9 | 1001 |
-| Next | 0000 |
+The simulation verifies:
+
+- Reset initializes the circuit.
+- Counter counts from `0` to `3`.
+- Slow clock toggles after every four rising edges.
+- Process repeats continuously.
 
 ---
 
-### Example Waveform
+## 🌊 Waveform
+
+> ![Q34 Waveform](waveforms/q34_waveform.png)
+
+Example:
 
 ```
-Clock ↑
+Clock
 
-0000
- ↓
-0001
- ↓
-0010
- ↓
-0011
- ↓
-0100
- ↓
-0101
- ↓
-0110
- ↓
-0111
- ↓
-1000
- ↓
-1001
- ↓
-0000
- ↓
-0001
+_|‾|_|‾|_|‾|_|‾|_|‾|_|‾|_|‾|_|‾|_
+
+Slowclk
+
+___________|‾‾‾‾‾‾‾‾‾|____________
 ```
 
 ---
 
-### Waveform
+## 📚 Concepts Learned
 
-```md
-![Q33 Waveform](waveforms/q33_waveform.png)
-```
-
----
-
-### What I Learned
-
-- A Decade Counter is also called a **MOD-10 Counter**.
-- It counts only **10 states (0–9)**.
-- A comparator checks whether the counter has reached `1001`.
-- After reaching `9`, the counter resets to `0000`.
-- Synchronous reset has the highest priority.
-- Sequential logic can combine arithmetic and decision-making.
-
----
-
-### Hardware Insight
-
-```
-                 +----------------------+
-Clock ---------->|                      |
-Reset ---------->|                      |
-                 |   Comparator (==9)   |
-                 |          │           |
-                 |          ▼           |
-                 |   Increment or Reset |
-                 |          │           |
-                 |      4-bit Register  |
-                 +----------------------+
-                            │
-                            ▼
-                         Counter
-```
-
----
-
-### Flowchart
-
-```
-Clock ↑
-   │
-   ▼
-Reset?
- │
- ├── Yes → Counter = 0000
- │
- └── No
-      │
-      ▼
-Counter == 9 ?
- │
- ├── Yes → Counter = 0000
- │
- └── No → Counter = Counter + 1
-```
-
----
-
-### Truth Table
-
-| Reset | Counter = 9 | Next Counter |
-|:----:|:-----------:|:------------:|
-| 1 | X | 0000 |
-| 0 | Yes | 0000 |
-| 0 | No | Counter + 1 |
-
----
-
-### Common Beginner Mistakes
-
-- Forgetting to compare with `1001` (decimal 9).
-- Allowing the counter to continue to `1010` (decimal 10).
-- Forgetting that reset has higher priority than counting.
-- Using blocking assignment (`=`) instead of non-blocking (`<=`) in sequential logic.
-- Not running the simulation long enough to observe the wrap from `9` back to `0`.
-
----
-
-### Key Concepts
-
+- Clock Division
+- Frequency Reduction
 - Sequential Logic
-- MOD-10 Counter
-- Decade Counter
-- Binary Counting
-- Comparator
-- Register Feedback
-- Synchronous Reset
-- Non-blocking Assignment (`<=`)
+- Counter-Based Design
+- Toggle Logic
+- Non-blocking Assignments
+- Register Reset
+- Digital Timing
 
 ---
 
-## Level Outcome
+## 🎯 Applications
 
-After completing these questions, I can:
+- LED Blinking
+- Digital Clocks
+- Timers
+- Frequency Division
+- FPGA Clock Management (conceptual)
+- Embedded Digital Systems
 
-- Design and simulate D Flip-Flops.
-- Generate clocks inside Verilog testbenches.
-- Understand the difference between combinational and sequential logic.
-- Implement synchronous and asynchronous reset circuits.
-- Predict sequential waveforms before simulation.
-- Analyze timing behavior using GTKWave.
+---
+
+## ✅ Output
+
+The output clock (`Slowclk`) toggles after every four input clock cycles, generating a slower clock signal from the original input clock.
+
+---
+
+## 📁 Files
+
+```
+q34.v
+tb_q34.v
+q34.vcd
+README.md
+```
+
+---
+
+## 🚀 Author
+
+**Yash Gupta**
+
+Learning Verilog HDL from scratch through hands-on digital design projects.
 
 ---
 
 *Updated as questions are completed.*
 
-**Next: Q32 — Clock Divider**
+**Next: Q35 — PISO**
