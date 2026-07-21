@@ -2,7 +2,7 @@
 
 > **Part of:** [verilog-questions](../) — Verilog HDL learning from zero to FSM-based project  
 > **Tools:** Icarus Verilog · GTKWave · VS Code  
-> **Status:** 🔄 In Progress — Day 9 (Q26–Q34 done)
+> **Status:** 🔄 In Progress — Day 10 (Level 4 done)
 
 ---
 
@@ -37,7 +37,7 @@ Verilog equivalent: `always @(posedge clk)`, non-blocking assignments (`<=`), fl
 | Q32 | `q32_updowncounter.v` | 4-bit Up-Down Counter | ✅ Done |
 | Q33 | `q33_decade.v` | Decade Counter | ✅ Done |
 | Q34 | `q34_clkdivider.v` | Clock Divider | ✅ Done |
-| Q35 | `q35_piso.v` | PISO Shift Register | ⬜ Not Started |
+| Q35 | `q35_piso.v` | PISO Shift Register | ✅ Done |
 
 ---
 
@@ -62,63 +62,61 @@ Useful tips:
 
 ---
 
-# Q34 - Clock Divider
+# Q35 - Parallel-In Serial-Out (PISO) Shift Register
 
 ## 📌 Aim
-Design a **Clock Divider** in Verilog that generates a slower clock signal from a faster input clock by using a 2-bit counter.
+
+Design a **4-bit Parallel-In Serial-Out (PISO) Shift Register** in Verilog HDL that loads 4-bit parallel data and shifts it out serially on every rising edge of the clock.
 
 ---
 
 ## 📖 Theory
 
-A Clock Divider reduces the frequency of an input clock by counting clock cycles and toggling an output signal after a fixed number of counts.
+A **Parallel-In Serial-Out (PISO) Shift Register** is a sequential circuit used to convert parallel data into serial data.
 
-In this design:
+It operates in two modes:
 
-- A **2-bit counter** counts from `0` to `3`.
-- When the counter reaches `3`, it:
-  - Resets back to `0`.
-  - Toggles the output clock (`Slowclk`).
-- This produces a clock signal with a lower frequency than the original input clock.
+### 1. Load Mode (`Load = 1`)
+- The entire 4-bit input (`D`) is loaded into the register simultaneously on the rising edge of the clock.
 
-This concept is widely used in digital systems for generating slower clocks required by LEDs, displays, timers, communication protocols, and other peripherals.
+### 2. Shift Mode (`Load = 0`)
+- The register shifts one bit to the right on every rising clock edge.
+- A `0` is inserted into the most significant bit (MSB).
+- The least significant bit (LSB) appears at the serial output.
 
 ---
 
 ## 🛠️ Components Used
 
-- Sequential `always @(posedge Clock)` block
-- 2-bit Register (Counter)
-- Reset Logic
-- Toggle Operation (`~Slowclk`)
-- Non-blocking Assignments (`<=`)
+- 4-bit Register
+- D Flip-Flops
+- Sequential Always Block
+- Shift Logic
+- Parallel Load Logic
+- Continuous Assignment
 
 ---
 
 ## 💻 Verilog Code
 
 ```verilog
-module q34 (
+module q35 (
     input wire Clock,
-    input wire Reset,
-    output reg Slowclk
+    input wire Load,
+    input wire [3:0] D,
+    output wire Serialout
 );
 
-reg [1:0] Counter;
+reg [3:0] Register;
 
 always @(posedge Clock) begin
-    if (Reset) begin
-        Counter <= 0;
-        Slowclk <= 0;
-    end
-    else if (Counter == 3) begin
-        Slowclk <= ~Slowclk;
-        Counter <= 0;
-    end
-    else begin
-        Counter <= Counter + 1;
-    end
+    if (Load)
+        Register <= D;
+    else
+        Register <= {1'b0, Register[3:1]};
 end
+
+assign Serialout = Register[0];
 
 endmodule
 ```
@@ -127,69 +125,77 @@ endmodule
 
 ## ▶️ Simulation
 
-The simulation verifies:
+The simulation verifies that:
 
-- Reset initializes the circuit.
-- Counter counts from `0` to `3`.
-- Slow clock toggles after every four rising edges.
-- Process repeats continuously.
+- Parallel data is loaded correctly.
+- Register shifts right after loading.
+- Serial output produces one bit every clock cycle.
+- A zero is inserted into the MSB after every shift.
 
 ---
 
 ## 🌊 Waveform
 
-> ![Q34 Waveform](waveforms/q34_waveform.png)
+> ![Q35 Waveform](waveforms/q35_waveform.png)
 
 Example:
 
 ```
-Clock
+Load = 1
 
-_|‾|_|‾|_|‾|_|‾|_|‾|_|‾|_|‾|_|‾|_
+D = 1011
 
-Slowclk
+↓
 
-___________|‾‾‾‾‾‾‾‾‾|____________
+Register = 1011
+
+↓
+
+Clock ↑
+
+Serial Output
+
+1 → 1 → 0 → 1
 ```
 
 ---
 
 ## 📚 Concepts Learned
 
-- Clock Division
-- Frequency Reduction
+- Parallel Loading
+- Serial Data Transmission
+- Shift Registers
 - Sequential Logic
-- Counter-Based Design
-- Toggle Logic
-- Non-blocking Assignments
-- Register Reset
-- Digital Timing
+- Register Operations
+- Bit Manipulation
+- Continuous Assignment
+- Data Conversion (Parallel → Serial)
 
 ---
 
 ## 🎯 Applications
 
-- LED Blinking
-- Digital Clocks
-- Timers
-- Frequency Division
-- FPGA Clock Management (conceptual)
-- Embedded Digital Systems
+- UART Communication
+- SPI Interfaces
+- Data Serialization
+- Digital Communication Systems
+- Embedded Systems
+- FPGA and ASIC Designs
 
 ---
 
-## ✅ Output
+## 💡 Key Takeaway
 
-The output clock (`Slowclk`) toggles after every four input clock cycles, generating a slower clock signal from the original input clock.
+A PISO Shift Register converts parallel data into serial data by loading all bits simultaneously and then shifting them out one bit per clock cycle.
 
 ---
 
 ## 📁 Files
 
 ```
-q34.v
-tb_q34.v
-q34.vcd
+q35.v
+tb_q35.v
+q35.vcd
 README.md
 ```
 
@@ -200,9 +206,3 @@ README.md
 **Yash Gupta**
 
 Learning Verilog HDL from scratch through hands-on digital design projects.
-
----
-
-*Updated as questions are completed.*
-
-**Next: Q35 — PISO**
