@@ -61,7 +61,7 @@ Clk │    State Register      │
 | # | File | What It Does | Status |
 |---|------|-------------|--------|
 | Q36 | `Q36-Two-State-Toggle-FSM.v` | Two-State Toggle Moore FSM | ✅ Done |
-| Q37 | `q37_*.v` | Multi-State FSM | ⏳ |
+| Q37 | `q37_*.v` | Multi-State FSM | ✅ Done |
 | Q38 | `q38_*.v` | FSM Controller | ⏳ |
 | Q39 | `q39_*.v` | Sequence Detector | ⏳ |
 | Q40 | `q40_*.v` | Advanced FSM | ⏳ |
@@ -88,33 +88,54 @@ Useful tips:
 
 ---
 
-# Q36 - Two-State Toggle Moore FSM
+# Q37 - Three-State Moore Finite State Machine (FSM)
 
 ## 📌 Aim
 
-Design a **Two-State Moore Finite State Machine (FSM)** that toggles between two states whenever the `Toggle` input is HIGH.
+Design a **Three-State Moore Finite State Machine (FSM)** in Verilog HDL that cycles through three states based on an input signal `X`. The output `LED` depends **only on the current state**, making it a **Moore FSM**.
 
 ---
 
 ## 📖 Theory
 
-A **Finite State Machine (FSM)** is a sequential circuit whose output depends on its current state and, optionally, the current inputs.
+A **Finite State Machine (FSM)** is a sequential circuit that stores its current state and changes state based on clock edges and input conditions.
 
-This project implements a **Moore FSM**, where the output depends **only on the current state**.
+This design implements a **Moore FSM**, where the output depends only on the current state and **not directly on the input**.
 
-The FSM has two states:
+The FSM consists of three states:
 
-### STATE_A
-- LED = OFF
-- Remains here while `Toggle = 0`
-- Moves to STATE_B when `Toggle = 1`
+| State | LED Output |
+|-------|------------|
+| S0 | 0 |
+| S1 | 0 |
+| S2 | 1 |
 
-### STATE_B
-- LED = ON
-- Remains here while `Toggle = 0`
-- Returns to STATE_A when `Toggle = 1`
+### State Transition Diagram
 
-The Reset input always initializes the FSM to **STATE_A**.
+```
+          X=1            X=1
+     +-----------> S1 -----------> S2
+     |              ^              |
+     |              |              |
+     | X=0          | X=0          | X=0
+     |              |              |
+     |              +--------------+
+     |                     |
+     +------ S0 <----------+
+             ^
+             |
+             +----- X=1 (from S2)
+```
+
+Or as a transition table:
+
+| Current State | X = 0 | X = 1 |
+|--------------|-------|-------|
+| S0 | S0 | S1 |
+| S1 | S1 | S2 |
+| S2 | S2 | S0 |
+
+The Reset signal initializes the FSM to **S0**.
 
 ---
 
@@ -125,54 +146,65 @@ The Reset input always initializes the FSM to **STATE_A**.
 - Moore Output Logic
 - Sequential Always Block
 - Combinational Always Block
-- Continuous Assignment
+- Continuous Assignment (`assign`)
 
 ---
 
 ## 💻 Verilog Code
 
 ```verilog
-module q36(
-    input wire Toggle,
+module q37 (
     input wire Clock,
     input wire Reset,
+    input wire X,
     output wire LED
 );
 
-reg Current_State, Next_State;
+reg [1:0] Current_State, Next_State;
 
-parameter STATE_A = 1'b0;
-parameter STATE_B = 1'b1;
+parameter [1:0]
+    S0 = 2'b00,
+    S1 = 2'b01,
+    S2 = 2'b10;
 
+// State Register
 always @(posedge Clock) begin
     if (Reset)
-        Current_State <= STATE_A;
+        Current_State <= S0;
     else
         Current_State <= Next_State;
 end
 
+// Next-State Logic
 always @(*) begin
     case(Current_State)
 
-        STATE_A:
-            if(Toggle)
-                Next_State = STATE_B;
+        S0:
+            if(X)
+                Next_State = S1;
             else
-                Next_State = STATE_A;
+                Next_State = S0;
 
-        STATE_B:
-            if(Toggle)
-                Next_State = STATE_A;
+        S1:
+            if(X)
+                Next_State = S2;
             else
-                Next_State = STATE_B;
+                Next_State = S1;
+
+        S2:
+            if(X)
+                Next_State = S0;
+            else
+                Next_State = S2;
 
         default:
-            Next_State = STATE_A;
+            Next_State = S0;
 
     endcase
 end
 
-assign LED = Current_State;
+// Moore Output Logic
+assign LED = (Current_State == S2);
 
 endmodule
 ```
@@ -181,118 +213,105 @@ endmodule
 
 ## ▶️ Simulation
 
-The simulation verifies that:
+The simulation verifies the following cases:
 
-- Reset initializes the FSM to STATE_A.
-- Toggle = 0 keeps the FSM in its current state.
-- Toggle = 1 switches between STATE_A and STATE_B.
-- LED changes only when the state changes.
-- State transitions occur only on the rising edge of the clock.
+- Reset initializes the FSM to **S0**
+- FSM remains in the same state when `X = 0`
+- S0 → S1 transition
+- S1 → S2 transition
+- S2 → S0 transition
+- LED becomes HIGH only in **S2**
 
 ---
 
 ## 🌊 Waveform
 
-> ![Q36 Waveform](waveforms/q36_waveform.png)
+> ![Q37 Waveform](waveforms/q37_waveform.png)
 
-Example:
+Example sequence:
 
 ```
-Reset = 1
+Reset
 
 ↓
 
-STATE_A
+S0 (LED = 0)
 
 ↓
 
-Toggle = 1
+X = 1
 
 ↓
 
-Clock ↑
+S1 (LED = 0)
 
 ↓
 
-STATE_B
+X = 1
 
 ↓
 
-LED = 1
+S2 (LED = 1)
 
 ↓
 
-Toggle = 1
+X = 1
 
 ↓
 
-Clock ↑
-
-↓
-
-STATE_A
-
-↓
-
-LED = 0
+S0 (LED = 0)
 ```
 
 ---
 
 ## 📚 Concepts Learned
 
-- Finite State Machines
+- Finite State Machines (FSM)
 - Moore FSM
 - State Encoding
 - State Register
 - Next-State Logic
 - Output Logic
+- State Transition Table
 - Sequential Logic
 - Combinational Logic
-- Non-blocking Assignments (`<=`)
-- Continuous Assignment (`assign`)
-- State Transitions
+- Continuous Assignment
+- Safe Default State
 
 ---
 
 ## 🎯 Applications
 
 - Traffic Light Controllers
+- Elevator Controllers
 - Vending Machines
-- Elevators
-- Washing Machines
-- UART Controllers
+- Digital Sequence Controllers
+- Embedded Systems
 - Communication Protocols
-- Embedded Controllers
-- FPGA & ASIC Design
+- FPGA and ASIC Control Logic
 
 ---
 
 ## 💡 Key Takeaway
 
-A Moore FSM separates hardware into three logical blocks:
+A Moore FSM separates the design into three logical blocks:
 
-1. **State Register** – stores the current state.
-2. **Next-State Logic** – decides where to move next.
-3. **Output Logic** – generates outputs from the current state.
+1. **State Register** – Stores the current state.
+2. **Next-State Logic** – Determines the next state based on the current state and input.
+3. **Output Logic** – Generates outputs using only the current state.
 
-This three-block architecture forms the foundation of almost every hardware controller.
+This modular architecture improves readability, debugging, and scalability while following industry-standard RTL design practices.
 
 ---
 
 ## 📁 Files
 
 ```
-Level-5-Finite-State-Machines/
-│
-├── README.md
-│
-└── Q36-Two-State-Toggle-FSM/
-    ├── q36.v
-    ├── tb_q36.v
-    ├── q36.vcd
-    ├── waveform.png
-    └── README.md
+q37.v
+tb_q37.v
+q37.vcd
+README.md
+waveform.png
 ```
 
 ---
@@ -301,4 +320,4 @@ Level-5-Finite-State-Machines/
 
 **Yash Gupta**
 
-Learning Verilog HDL from scratch through hands-on digital design projects, progressing from basic logic gates to industry-standard RTL design and Finite State Machines.
+Learning Verilog HDL from scratch through hands-on digital design projects, progressing from basic combinational circuits to industry-style RTL design and Finite State Machines.
