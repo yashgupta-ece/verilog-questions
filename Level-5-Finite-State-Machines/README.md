@@ -2,7 +2,7 @@
 
 > **Part of:** [verilog-questions](../) — Verilog HDL learning from zero to FSM-based project  
 > **Tools:** Icarus Verilog · GTKWave · VS Code  
-> **Status:** 🔄 In Progress — Day 11 (Q36 Completed)
+> **Status:** 🔄 In Progress — Day 13 (Q36- Q38 Completed)
 
 ---
 
@@ -61,8 +61,8 @@ Clk │    State Register      │
 | # | File | What It Does | Status |
 |---|------|-------------|--------|
 | Q36 | `Q36-Two-State-Toggle-FSM.v` | Two-State Toggle Moore FSM | ✅ Done |
-| Q37 | `q37_*.v` | Multi-State FSM | ✅ Done |
-| Q38 | `q38_*.v` | FSM Controller | ⏳ |
+| Q37 | `q37_Multi-State FSM.v` | Multi-State FSM | ✅ Done |
+| Q38 | `q38_FSM Controller.v` | FSM Controller | ✅ Done |
 | Q39 | `q39_*.v` | Sequence Detector | ⏳ |
 | Q40 | `q40_*.v` | Advanced FSM | ⏳ |
 
@@ -88,230 +88,144 @@ Useful tips:
 
 ---
 
-# Q37 - Three-State Moore Finite State Machine (FSM)
+# Q38 - Sequence Detector (101) using Moore FSM
 
 ## 📌 Aim
 
-Design a **Three-State Moore Finite State Machine (FSM)** in Verilog HDL that cycles through three states based on an input signal `X`. The output `LED` depends **only on the current state**, making it a **Moore FSM**.
+Design a **Moore Finite State Machine (FSM)** in Verilog HDL that detects the binary sequence **101**. The output becomes HIGH only after the complete sequence has been received.
 
 ---
 
 ## 📖 Theory
 
-A **Finite State Machine (FSM)** is a sequential circuit that stores its current state and changes state based on clock edges and input conditions.
+A **Sequence Detector** is a sequential circuit that recognizes a predefined bit pattern from a serial input stream.
 
-This design implements a **Moore FSM**, where the output depends only on the current state and **not directly on the input**.
+This design implements an **Overlapping Moore FSM**, meaning that after detecting one sequence, the FSM continues tracking possible overlapping occurrences instead of restarting completely.
 
-The FSM consists of three states:
-
-| State | LED Output |
-|-------|------------|
-| S0 | 0 |
-| S1 | 0 |
-| S2 | 1 |
-
-### State Transition Diagram
+Target Sequence:
 
 ```
-          X=1            X=1
-     +-----------> S1 -----------> S2
-     |              ^              |
-     |              |              |
-     | X=0          | X=0          | X=0
-     |              |              |
-     |              +--------------+
-     |                     |
-     +------ S0 <----------+
-             ^
-             |
-             +----- X=1 (from S2)
+101
 ```
 
-Or as a transition table:
+---
+
+## State Description
+
+| State | Meaning | Detector |
+|------|----------|----------|
+| S0 | No bits matched | 0 |
+| S1 | Matched "1" | 0 |
+| S2 | Matched "10" | 0 |
+| S3 | Matched "101" | 1 |
+
+---
+
+## State Transition Table
 
 | Current State | X = 0 | X = 1 |
 |--------------|-------|-------|
 | S0 | S0 | S1 |
-| S1 | S1 | S2 |
-| S2 | S2 | S0 |
-
-The Reset signal initializes the FSM to **S0**.
+| S1 | S2 | S1 |
+| S2 | S0 | S3 |
+| S3 | S2 | S1 |
 
 ---
 
-## 🛠️ Components Used
+## 🛠 Components Used
 
 - State Register
 - Next-State Logic
 - Moore Output Logic
 - Sequential Always Block
 - Combinational Always Block
-- Continuous Assignment (`assign`)
+- Continuous Assignment
 
 ---
 
 ## 💻 Verilog Code
 
 ```verilog
-module q37 (
-    input wire Clock,
-    input wire Reset,
-    input wire X,
-    output wire LED
-);
-
-reg [1:0] Current_State, Next_State;
-
-parameter [1:0]
-    S0 = 2'b00,
-    S1 = 2'b01,
-    S2 = 2'b10;
-
-// State Register
-always @(posedge Clock) begin
-    if (Reset)
-        Current_State <= S0;
-    else
-        Current_State <= Next_State;
-end
-
-// Next-State Logic
-always @(*) begin
-    case(Current_State)
-
-        S0:
-            if(X)
-                Next_State = S1;
-            else
-                Next_State = S0;
-
-        S1:
-            if(X)
-                Next_State = S2;
-            else
-                Next_State = S1;
-
-        S2:
-            if(X)
-                Next_State = S0;
-            else
-                Next_State = S2;
-
-        default:
-            Next_State = S0;
-
-    endcase
-end
-
-// Moore Output Logic
-assign LED = (Current_State == S2);
-
-endmodule
+// q38.v
 ```
+
+(Place your RTL here.)
 
 ---
 
 ## ▶️ Simulation
 
-The simulation verifies the following cases:
+Simulation verifies:
 
-- Reset initializes the FSM to **S0**
-- FSM remains in the same state when `X = 0`
-- S0 → S1 transition
-- S1 → S2 transition
-- S2 → S0 transition
-- LED becomes HIGH only in **S2**
+- Reset operation
+- Sequence detection (101)
+- Multiple detections
+- Overlapping sequence detection
+- Correct state transitions
 
 ---
 
 ## 🌊 Waveform
 
-> ![Q37 Waveform](waveforms/q37_waveform.png)
+> ![Q38 Waveform](waveforms/q38_waveform.png)
 
-Example sequence:
+Example:
 
 ```
-Reset
+Input:
 
-↓
+1 0 1 0 1
 
-S0 (LED = 0)
+Detected:
 
-↓
-
-X = 1
-
-↓
-
-S1 (LED = 0)
-
-↓
-
-X = 1
-
-↓
-
-S2 (LED = 1)
-
-↓
-
-X = 1
-
-↓
-
-S0 (LED = 0)
+0 0 1 0 1
 ```
+
+The detector successfully identifies overlapping occurrences of **101**.
 
 ---
 
 ## 📚 Concepts Learned
 
-- Finite State Machines (FSM)
 - Moore FSM
+- Sequence Detector
+- Overlapping Sequence Detection
 - State Encoding
 - State Register
 - Next-State Logic
 - Output Logic
-- State Transition Table
-- Sequential Logic
-- Combinational Logic
-- Continuous Assignment
-- Safe Default State
+- FSM Design Methodology
 
 ---
 
 ## 🎯 Applications
 
-- Traffic Light Controllers
-- Elevator Controllers
-- Vending Machines
-- Digital Sequence Controllers
-- Embedded Systems
+- UART Receivers
+- Pattern Detection
+- Packet Detection
 - Communication Protocols
-- FPGA and ASIC Control Logic
+- Digital Locks
+- Embedded Controllers
+- FPGA Control Logic
 
 ---
 
 ## 💡 Key Takeaway
 
-A Moore FSM separates the design into three logical blocks:
+A sequence detector remembers previously received bits using states instead of storing the entire input stream.
 
-1. **State Register** – Stores the current state.
-2. **Next-State Logic** – Determines the next state based on the current state and input.
-3. **Output Logic** – Generates outputs using only the current state.
-
-This modular architecture improves readability, debugging, and scalability while following industry-standard RTL design practices.
+Each state represents the **longest matched prefix** of the target sequence, making FSMs efficient for real-time pattern detection.
 
 ---
 
 ## 📁 Files
 
 ```
-q37.v
-tb_q37.v
-q37.vcd
-README.md
+q38.v
+tb_q38.v
+q38.vcd
 waveform.png
+README.md
 ```
 
 ---
@@ -320,4 +234,4 @@ waveform.png
 
 **Yash Gupta**
 
-Learning Verilog HDL from scratch through hands-on digital design projects, progressing from basic combinational circuits to industry-style RTL design and Finite State Machines.
+Learning Verilog HDL from scratch through hands-on RTL design projects, progressing from combinational logic to industry-style Finite State Machines.
