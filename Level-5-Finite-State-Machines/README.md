@@ -2,7 +2,7 @@
 
 > **Part of:** [verilog-questions](../) — Verilog HDL learning from zero to FSM-based project  
 > **Tools:** Icarus Verilog · GTKWave · VS Code  
-> **Status:** 🔄 In Progress — Day 13 (Q36- Q38 Completed)
+> **Status:** 🔄 In Progress — Day 14 (Q36- Q39 Completed)
 
 ---
 
@@ -63,8 +63,13 @@ Clk │    State Register      │
 | Q36 | `Q36-Two-State-Toggle-FSM.v` | Two-State Toggle Moore FSM | ✅ Done |
 | Q37 | `q37_Multi-State FSM.v` | Multi-State FSM | ✅ Done |
 | Q38 | `q38_FSM Controller.v` | FSM Controller | ✅ Done |
-| Q39 | `q39_*.v` | Sequence Detector | ⏳ |
-| Q40 | `q40_*.v` | Advanced FSM | ⏳ |
+| Q39 | `Q39-Vending_machine(simple).v` | Vending Machine FSM | ✅ Done |
+| Q40 | `q40_*.v` | Edge Detector | ⏳ |
+| Q41 | `q41_*.v` | Serial to Parallel Converter  | ⏳ |
+| Q42 | `q42_*.v` | FSM with Datapath  | ⏳ |
+| Q43 | `q43_*.v` | Smart Traffic Controller — 4 states + emergency override | ⏳ |
+| Q44 | `q44_*.v` | Parking Lot Controller | ⏳ |
+| Q45 | `q45_*.v` | UART Transmitter FSM | ⏳ |
 
 ---
 
@@ -88,143 +93,149 @@ Useful tips:
 
 ---
 
-# Q38 - Sequence Detector (101) using Moore FSM
+# Q39 - Vending Machine FSM (Moore FSM)
 
 ## 📌 Aim
 
-Design a **Moore Finite State Machine (FSM)** in Verilog HDL that detects the binary sequence **101**. The output becomes HIGH only after the complete sequence has been received.
+Design a Moore Finite State Machine (FSM) that dispenses an item after receiving two ₹5 coins (₹10 total).
 
 ---
 
 ## 📖 Theory
 
-A **Sequence Detector** is a sequential circuit that recognizes a predefined bit pattern from a serial input stream.
+A vending machine remembers the total amount inserted using different states.
 
-This design implements an **Overlapping Moore FSM**, meaning that after detecting one sequence, the FSM continues tracking possible overlapping occurrences instead of restarting completely.
+States used:
 
-Target Sequence:
+- **S0** : ₹0 collected
+- **S1** : ₹5 collected
+- **S2** : ₹10 collected (Dispense Item)
 
-```
-101
-```
+The machine accepts one ₹5 coin at a time.
 
----
+Once ₹10 has been collected, the machine enters the dispensing state and then returns to the idle state for the next customer.
 
-## State Description
-
-| State | Meaning | Detector |
-|------|----------|----------|
-| S0 | No bits matched | 0 |
-| S1 | Matched "1" | 0 |
-| S2 | Matched "10" | 0 |
-| S3 | Matched "101" | 1 |
+Since the output depends only on the current state, this is a **Moore FSM**.
 
 ---
 
-## State Transition Table
+## ⚠️ Assumptions
 
-| Current State | X = 0 | X = 1 |
-|--------------|-------|-------|
-| S0 | S0 | S1 |
-| S1 | S2 | S1 |
-| S2 | S0 | S3 |
-| S3 | S2 | S1 |
+This implementation is a simplified Moore FSM created for learning purposes.
+
+The following assumptions have been made:
+
+- The vending machine accepts **only ₹5 coins**.
+- Each `Coin = 1` represents the insertion of **one ₹5 coin**.
+- The item costs **₹10**, so two ₹5 coins are required.
+- The FSM does **not** support multiple coin denominations (such as ₹10 or ₹20).
+- The FSM does **not** detect how many coins are inserted simultaneously; it assumes only one coin can be inserted per clock cycle.
+- After dispensing the item, the machine automatically returns to the idle state (S0) and starts a new transaction.
+
+Future versions can be extended to support:
+- Multiple coin denominations (₹5, ₹10, ₹20, etc.)
+- Change return
+- Invalid coin detection
+- Multiple item selection
+- Balance display
 
 ---
+
 
 ## 🛠 Components Used
 
 - State Register
-- Next-State Logic
+- Next State Logic
 - Moore Output Logic
-- Sequential Always Block
-- Combinational Always Block
-- Continuous Assignment
+- Asynchronous Reset
+- Case Statement
 
 ---
 
-## 💻 Verilog Code
+## 🗂 State Encoding
 
-```verilog
-// q38.v
-```
+| State | Meaning | Binary |
+|-------|---------|--------|
+| S0 | ₹0 Collected | 2'b00 |
+| S1 | ₹5 Collected | 2'b01 |
+| S2 | ₹10 Collected / Dispense | 2'b10 |
 
-(Place your RTL here.)
+---
+
+## 🔄 State Transition Table
+
+| Current State | Coin = 0 | Coin = 1 |
+|---------------|----------|----------|
+| S0 | S0 | S1 |
+| S1 | S1 | S2 |
+| S2 | S0 | S0 |
+
+---
+
+## 📊 Output Table
+
+| State | Dispense |
+|-------|----------|
+| S0 | 0 |
+| S1 | 0 |
+| S2 | 1 |
 
 ---
 
 ## ▶️ Simulation
 
-Simulation verifies:
+The simulation verifies:
 
-- Reset operation
-- Sequence detection (101)
-- Multiple detections
-- Overlapping sequence detection
-- Correct state transitions
+- Reset initializes the FSM to S0.
+- First coin moves S0 → S1.
+- Second coin moves S1 → S2.
+- Dispense becomes HIGH in S2.
+- FSM returns to S0 after dispensing.
 
 ---
 
 ## 🌊 Waveform
 
-> ![Q38 Waveform](waveforms/q38_waveform.png)
-
-Example:
-
+```md
+![Q39 Waveform](Waveforms/q39_waveform.png)
 ```
-Input:
-
-1 0 1 0 1
-
-Detected:
-
-0 0 1 0 1
-```
-
-The detector successfully identifies overlapping occurrences of **101**.
-
 ---
 
 ## 📚 Concepts Learned
 
 - Moore FSM
-- Sequence Detector
-- Overlapping Sequence Detection
-- State Encoding
 - State Register
 - Next-State Logic
 - Output Logic
-- FSM Design Methodology
+- State Encoding
+- State Transition Table
+- Case Statements
+- Asynchronous Reset
 
 ---
 
 ## 🎯 Applications
 
-- UART Receivers
-- Pattern Detection
-- Packet Detection
-- Communication Protocols
-- Digital Locks
-- Embedded Controllers
-- FPGA Control Logic
+- Vending Machines
+- Ticket Machines
+- Toll Collection Systems
+- Payment Controllers
+- Token-Based Access Systems
 
 ---
 
 ## 💡 Key Takeaway
 
-A sequence detector remembers previously received bits using states instead of storing the entire input stream.
-
-Each state represents the **longest matched prefix** of the target sequence, making FSMs efficient for real-time pattern detection.
+A Moore FSM generates outputs based only on the current state, making the design stable and easier to understand.
 
 ---
 
 ## 📁 Files
 
 ```
-q38.v
-tb_q38.v
-q38.vcd
-waveform.png
+q39.v
+tb_q39.v
+q39.vcd
 README.md
 ```
 
@@ -234,4 +245,4 @@ README.md
 
 **Yash Gupta**
 
-Learning Verilog HDL from scratch through hands-on RTL design projects, progressing from combinational logic to industry-style Finite State Machines.
+Learning Verilog HDL through structured RTL design, simulation, and FSM-based digital systems.

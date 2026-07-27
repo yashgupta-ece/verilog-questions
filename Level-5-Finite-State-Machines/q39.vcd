@@ -1,0 +1,87 @@
+$date
+	Mon Jul 27 22:01:22 2026
+$end
+$version
+	Icarus Verilog
+$end
+$timescale
+	1s
+$end
+$scope module tb_q39 $end
+$var wire 1 ! Dispense $end
+$var reg 1 " Clock $end
+$var reg 1 # Coin $end
+$var reg 1 $ Reset $end
+$scope module uut $end
+$var wire 1 " Clock $end
+$var wire 1 # Coin $end
+$var wire 1 $ Reset $end
+$var wire 1 ! Dispense $end
+$var parameter 2 % S0 $end
+$var parameter 2 & S1 $end
+$var parameter 2 ' S2 $end
+$var reg 2 ( Current_State [1:0] $end
+$var reg 2 ) Next_State [1:0] $end
+$upscope $end
+$upscope $end
+$enddefinitions $end
+$comment Show the parameter values. $end
+$dumpall
+b10 '
+b1 &
+b0 %
+$end
+#0
+$dumpvars
+b1 )
+b0 (
+1$
+1#
+0"
+0!
+$end
+#5
+1"
+#10
+0"
+#15
+1"
+#20
+b0 )
+0"
+0#
+0$
+#25
+1"
+#30
+b1 )
+0"
+1#
+#35
+b10 )
+b1 (
+1"
+#40
+0"
+#45
+b1 )
+1!
+b10 (
+1"
+#50
+b1 )
+0!
+b0 (
+0"
+1$
+#55
+1"
+#60
+0"
+0$
+#65
+b10 )
+b1 (
+1"
+#70
+0"
