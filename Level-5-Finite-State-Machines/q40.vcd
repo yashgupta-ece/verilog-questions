@@ -1,0 +1,92 @@
+$date
+	Wed Jul 29 00:04:03 2026
+$end
+$version
+	Icarus Verilog
+$end
+$timescale
+	1s
+$end
+$scope module tb_q40 $end
+$var wire 1 ! Detector $end
+$var reg 1 " Clock $end
+$var reg 1 # In $end
+$var reg 1 $ Reset $end
+$scope module uut $end
+$var wire 1 " Clock $end
+$var wire 1 ! Detector $end
+$var wire 1 # In $end
+$var wire 1 $ Reset $end
+$var parameter 32 % S0 $end
+$var parameter 32 & S1 $end
+$var reg 1 ' Current_State $end
+$var reg 1 ( Next_State $end
+$upscope $end
+$upscope $end
+$enddefinitions $end
+$comment Show the parameter values. $end
+$dumpall
+b1 &
+b0 %
+$end
+#0
+$dumpvars
+0(
+0'
+1$
+0#
+0"
+0!
+$end
+#5
+1"
+#10
+0"
+0$
+#15
+1"
+#20
+1(
+1!
+0"
+1#
+#25
+0!
+1'
+1"
+#30
+0"
+#35
+1"
+#40
+0(
+0"
+0#
+#45
+0'
+1"
+#50
+1(
+1!
+0"
+1#
+#55
+0!
+1'
+1"
+#60
+1!
+0'
+0"
+1$
+#65
+1"
+#70
+0"
+0$
+#75
+0!
+1'
+1"
+#80
+0"

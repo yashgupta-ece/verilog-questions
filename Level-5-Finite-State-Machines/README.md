@@ -2,7 +2,7 @@
 
 > **Part of:** [verilog-questions](../) — Verilog HDL learning from zero to FSM-based project  
 > **Tools:** Icarus Verilog · GTKWave · VS Code  
-> **Status:** 🔄 In Progress — Day 14 (Q36- Q39 Completed)
+> **Status:** 🔄 In Progress — Day 15 (Q36- Q40 Completed)
 
 ---
 
@@ -64,7 +64,7 @@ Clk │    State Register      │
 | Q37 | `q37_Multi-State FSM.v` | Multi-State FSM | ✅ Done |
 | Q38 | `q38_FSM Controller.v` | FSM Controller | ✅ Done |
 | Q39 | `Q39-Vending_machine(simple).v` | Vending Machine FSM | ✅ Done |
-| Q40 | `q40_*.v` | Edge Detector | ⏳ |
+| Q40 | `q40_Edge_Detector.v` | Edge Detector | ✅ Done |
 | Q41 | `q41_*.v` | Serial to Parallel Converter  | ⏳ |
 | Q42 | `q42_*.v` | FSM with Datapath  | ⏳ |
 | Q43 | `q43_*.v` | Smart Traffic Controller — 4 states + emergency override | ⏳ |
@@ -93,92 +93,72 @@ Useful tips:
 
 ---
 
-# Q39 - Vending Machine FSM (Moore FSM)
+# Q40 - Rising Edge Detector using Mealy FSM
 
 ## 📌 Aim
 
-Design a Moore Finite State Machine (FSM) that dispenses an item after receiving two ₹5 coins (₹10 total).
+Design a Rising Edge Detector using a Mealy Finite State Machine (FSM) in Verilog HDL. The circuit generates a one-clock-cycle pulse whenever the input signal transitions from LOW (0) to HIGH (1).
 
 ---
 
 ## 📖 Theory
 
-A vending machine remembers the total amount inserted using different states.
+A Rising Edge Detector identifies the transition of a digital signal from logic LOW to logic HIGH.
 
-States used:
+Instead of keeping the output HIGH while the input remains HIGH, the detector generates a single clock pulse only at the instant the rising edge occurs.
 
-- **S0** : ₹0 collected
-- **S1** : ₹5 collected
-- **S2** : ₹10 collected (Dispense Item)
-
-The machine accepts one ₹5 coin at a time.
-
-Once ₹10 has been collected, the machine enters the dispensing state and then returns to the idle state for the next customer.
-
-Since the output depends only on the current state, this is a **Moore FSM**.
+Since the output depends on both the current state and the current input, this is implemented using a **Mealy FSM**.
 
 ---
-
-## ⚠️ Assumptions
-
-This implementation is a simplified Moore FSM created for learning purposes.
-
-The following assumptions have been made:
-
-- The vending machine accepts **only ₹5 coins**.
-- Each `Coin = 1` represents the insertion of **one ₹5 coin**.
-- The item costs **₹10**, so two ₹5 coins are required.
-- The FSM does **not** support multiple coin denominations (such as ₹10 or ₹20).
-- The FSM does **not** detect how many coins are inserted simultaneously; it assumes only one coin can be inserted per clock cycle.
-- After dispensing the item, the machine automatically returns to the idle state (S0) and starts a new transaction.
-
-Future versions can be extended to support:
-- Multiple coin denominations (₹5, ₹10, ₹20, etc.)
-- Change return
-- Invalid coin detection
-- Multiple item selection
-- Balance display
-
----
-
 
 ## 🛠 Components Used
 
+- Mealy Finite State Machine
 - State Register
 - Next State Logic
-- Moore Output Logic
+- Combinational Logic
 - Asynchronous Reset
-- Case Statement
 
 ---
 
 ## 🗂 State Encoding
 
-| State | Meaning | Binary |
-|-------|---------|--------|
-| S0 | ₹0 Collected | 2'b00 |
-| S1 | ₹5 Collected | 2'b01 |
-| S2 | ₹10 Collected / Dispense | 2'b10 |
+| State | Meaning |
+|-------|---------|
+| S0 | Previous Input = 0 |
+| S1 | Previous Input = 1 |
 
 ---
 
 ## 🔄 State Transition Table
 
-| Current State | Coin = 0 | Coin = 1 |
-|---------------|----------|----------|
-| S0 | S0 | S1 |
-| S1 | S1 | S2 |
-| S2 | S0 | S0 |
+| Current State | Input | Next State | Detector |
+|---------------|-------|------------|----------|
+| S0 | 0 | S0 | 0 |
+| S0 | 1 | S1 | 1 |
+| S1 | 0 | S0 | 0 |
+| S1 | 1 | S1 | 0 |
 
 ---
 
-## 📊 Output Table
+## 📊 State Diagram
 
-| State | Dispense |
-|-------|----------|
-| S0 | 0 |
-| S1 | 0 |
-| S2 | 1 |
+```
+                 In=1 / Detector=1
+          +----------------------+
+          |                      |
+          ▼                      |
+        +------+            +------+
+        |  S0  |            |  S1  |
+        +------+            +------+
+          ▲                    |
+          |                    |
+          +--------------------+
+          In=0 / Detector=0
+
+S0 --In=0--> S0
+S1 --In=1--> S1
+```
 
 ---
 
@@ -187,55 +167,54 @@ Future versions can be extended to support:
 The simulation verifies:
 
 - Reset initializes the FSM to S0.
-- First coin moves S0 → S1.
-- Second coin moves S1 → S2.
-- Dispense becomes HIGH in S2.
-- FSM returns to S0 after dispensing.
+- Detector generates a pulse only when the input changes from 0 to 1.
+- Detector remains LOW while the input stays HIGH.
+- Detector remains LOW during falling edges.
+- Multiple rising edges generate multiple pulses.
 
 ---
 
 ## 🌊 Waveform
 
-```md
-![Q39 Waveform](Waveforms/q39_waveform.png)
-```
+*![Q40 Waveform](waveforms/q40_waveform.png)*
+
 ---
 
 ## 📚 Concepts Learned
 
-- Moore FSM
+- Mealy FSM
+- Edge Detection
+- Previous Value Storage
 - State Register
-- Next-State Logic
+- Next State Logic
 - Output Logic
-- State Encoding
-- State Transition Table
-- Case Statements
 - Asynchronous Reset
 
 ---
 
 ## 🎯 Applications
 
-- Vending Machines
-- Ticket Machines
-- Toll Collection Systems
-- Payment Controllers
-- Token-Based Access Systems
+- Button Debouncing
+- Digital Pulse Generation
+- Event Detection
+- Synchronizers
+- Communication Interfaces
+- Interrupt Generation
 
 ---
 
 ## 💡 Key Takeaway
 
-A Moore FSM generates outputs based only on the current state, making the design stable and easier to understand.
+A Mealy FSM produces outputs based on both the current state and the current input. This makes it ideal for detecting signal transitions such as rising edges.
 
 ---
 
 ## 📁 Files
 
 ```
-q39.v
-tb_q39.v
-q39.vcd
+q40.v
+tb_q40.v
+q40.vcd
 README.md
 ```
 
@@ -245,4 +224,4 @@ README.md
 
 **Yash Gupta**
 
-Learning Verilog HDL through structured RTL design, simulation, and FSM-based digital systems.
+Learning Verilog HDL through structured RTL design, simulation, FSM design, and digital system implementation.
