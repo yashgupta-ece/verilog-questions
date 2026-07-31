@@ -2,7 +2,7 @@
 
 > **Part of:** [verilog-questions](../) — Verilog HDL learning from zero to FSM-based project  
 > **Tools:** Icarus Verilog · GTKWave · VS Code  
-> **Status:** 🔄 In Progress — Day 15 (Q36- Q40 Completed)
+> **Status:** 🔄 In Progress — Day 16 (Q36- Q41 Completed)
 
 ---
 
@@ -65,7 +65,7 @@ Clk │    State Register      │
 | Q38 | `q38_FSM Controller.v` | FSM Controller | ✅ Done |
 | Q39 | `Q39-Vending_machine(simple).v` | Vending Machine FSM | ✅ Done |
 | Q40 | `q40_Edge_Detector.v` | Edge Detector | ✅ Done |
-| Q41 | `q41_*.v` | Serial to Parallel Converter  | ⏳ |
+| Q41 | `Q41-Serial_to_Parallel_Converter.v` | Serial to Parallel Converter  | ✅ Done |
 | Q42 | `q42_*.v` | FSM with Datapath  | ⏳ |
 | Q43 | `q43_*.v` | Smart Traffic Controller — 4 states + emergency override | ⏳ |
 | Q44 | `q44_*.v` | Parking Lot Controller | ⏳ |
@@ -93,135 +93,184 @@ Useful tips:
 
 ---
 
-# Q40 - Rising Edge Detector using Mealy FSM
+# 8-bit Serial-to-Parallel Converter
 
-## 📌 Aim
+## 📌 Overview
 
-Design a Rising Edge Detector using a Mealy Finite State Machine (FSM) in Verilog HDL. The circuit generates a one-clock-cycle pulse whenever the input signal transitions from LOW (0) to HIGH (1).
+This project implements an **8-bit Serial-to-Parallel Converter** in Verilog HDL. The converter receives one serial bit on every clock cycle, stores the incoming bits in an internal shift register, and transfers the complete 8-bit data to a parallel output after receiving all eight bits.
 
----
-
-## 📖 Theory
-
-A Rising Edge Detector identifies the transition of a digital signal from logic LOW to logic HIGH.
-
-Instead of keeping the output HIGH while the input remains HIGH, the detector generates a single clock pulse only at the instant the rising edge occurs.
-
-Since the output depends on both the current state and the current input, this is implemented using a **Mealy FSM**.
+A **Data_Ready** signal is generated to indicate that a complete byte has been successfully received.
 
 ---
 
-## 🛠 Components Used
+## 🎯 Objective
 
-- Mealy Finite State Machine
-- State Register
-- Next State Logic
-- Combinational Logic
+- Convert serial data into parallel data.
+- Understand the working of shift registers.
+- Implement a bit counter.
+- Generate a Data_Ready signal after receiving 8 bits.
+- Practice sequential circuit design using Verilog HDL.
+
+---
+
+## 🛠️ Features
+
+- 8-bit Serial Data Reception
+- Serial-to-Parallel Conversion
+- Shift Register Based Design
+- 4-bit Counter
+- Parallel Data Output
+- Data Ready Pulse Generation
 - Asynchronous Reset
 
 ---
 
-## 🗂 State Encoding
+## 📂 Inputs
 
-| State | Meaning |
-|-------|---------|
-| S0 | Previous Input = 0 |
-| S1 | Previous Input = 1 |
-
----
-
-## 🔄 State Transition Table
-
-| Current State | Input | Next State | Detector |
-|---------------|-------|------------|----------|
-| S0 | 0 | S0 | 0 |
-| S0 | 1 | S1 | 1 |
-| S1 | 0 | S0 | 0 |
-| S1 | 1 | S1 | 0 |
+| Signal | Width | Description |
+|---------|------|-------------|
+| Clock | 1 | System Clock |
+| Reset | 1 | Asynchronous Reset |
+| Serial_In | 1 | Serial Input Data |
 
 ---
 
-## 📊 State Diagram
+## 📂 Outputs
 
-```
-                 In=1 / Detector=1
-          +----------------------+
-          |                      |
-          ▼                      |
-        +------+            +------+
-        |  S0  |            |  S1  |
-        +------+            +------+
-          ▲                    |
-          |                    |
-          +--------------------+
-          In=0 / Detector=0
-
-S0 --In=0--> S0
-S1 --In=1--> S1
-```
+| Signal | Width | Description |
+|---------|------|-------------|
+| Parallel_Out | 8 | Converted Parallel Data |
+| Data_Ready | 1 | Indicates that 8 bits have been received |
 
 ---
 
-## ▶️ Simulation
+## ⚙️ Working Principle
 
-The simulation verifies:
+### Reset
 
-- Reset initializes the FSM to S0.
-- Detector generates a pulse only when the input changes from 0 to 1.
-- Detector remains LOW while the input stays HIGH.
-- Detector remains LOW during falling edges.
-- Multiple rising edges generate multiple pulses.
+When Reset is asserted:
+
+- Counter is cleared.
+- Shift Register is cleared.
+- Parallel Output is cleared.
+- Data_Ready becomes LOW.
+
+### Normal Operation
+
+On every positive edge of the clock:
+
+1. One serial bit is shifted into the shift register.
+2. The counter increments.
+3. After receiving 8 bits:
+   - The complete byte is transferred to `Parallel_Out`.
+   - `Data_Ready` goes HIGH for one clock cycle.
+   - Counter resets to receive the next byte.
 
 ---
 
-## 🌊 Waveform
+## 🧠 Internal Components
 
-*![Q40 Waveform](waveforms/q40_waveform.png)*
+- 8-bit Shift Register
+- 4-bit Counter
+- Parallel Output Register
+- Data Ready Logic
+
+---
+#Waveform
+
+> ![Q41 Waveform](Waveforms/q41_waveform.png)
+
+
+---
+## 🧪 Test Cases
+
+### Test Case 1
+✔ Reset Verification
+
+- All registers reset to zero.
+
+---
+
+### Test Case 2
+✔ First Serial Data Reception
+
+Input Bits:
+
+10110010
+
+Expected Output:
+
+Parallel_Out = B2 (Hex)
+
+---
+
+### Test Case 3
+✔ Idle Verification
+
+- No incoming serial data.
+- Data_Ready returns LOW.
+
+---
+
+### Test Case 4
+✔ Second Serial Data Reception
+
+Another 8-bit serial stream was applied to verify continuous operation.
+
+---
+
+### Test Case 5
+✔ Reset During Operation
+
+- Reset asserted after data reception.
+- All registers successfully cleared.
+
+---
+
+## 📊 Simulation
+
+Simulation Tools:
+
+- Icarus Verilog
+- GTKWave
+
+Verified:
+
+- Shift Register Operation
+- Counter Operation
+- Serial-to-Parallel Conversion
+- Data_Ready Pulse
+- Reset Functionality
 
 ---
 
 ## 📚 Concepts Learned
 
-- Mealy FSM
-- Edge Detection
-- Previous Value Storage
-- State Register
-- Next State Logic
-- Output Logic
-- Asynchronous Reset
+- Shift Registers
+- Counters
+- Serial-to-Parallel Conversion
+- Sequential Logic
+- Register Transfer Logic (RTL)
+- Non-Blocking Assignments (`<=`)
 
 ---
 
-## 🎯 Applications
+## 🚀 Future Improvements
 
-- Button Debouncing
-- Digital Pulse Generation
-- Event Detection
-- Synchronizers
-- Communication Interfaces
-- Interrupt Generation
-
----
-
-## 💡 Key Takeaway
-
-A Mealy FSM produces outputs based on both the current state and the current input. This makes it ideal for detecting signal transitions such as rising edges.
+- Configurable Data Width (8/16/32 bits)
+- Enable Signal
+- Load Control
+- Shift Direction Selection
+- Parameterized Design
+- Integration with Communication Interfaces (UART/SPI)
 
 ---
 
-## 📁 Files
+## 🏁 Conclusion
 
-```
-q40.v
-tb_q40.v
-q40.vcd
-README.md
-```
+This project demonstrates the implementation of an **8-bit Serial-to-Parallel Converter** using Verilog HDL. The design converts serial input data into parallel form using a shift register and counter, making it an excellent exercise for understanding sequential digital circuit design and RTL development.
 
----
-
-## 🚀 Author
-
-**Yash Gupta**
+🚀 Author
+Yash Gupta
 
 Learning Verilog HDL through structured RTL design, simulation, FSM design, and digital system implementation.

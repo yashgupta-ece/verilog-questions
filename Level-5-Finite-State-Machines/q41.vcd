@@ -1,0 +1,191 @@
+$date
+	Fri Jul 31 23:00:12 2026
+$end
+$version
+	Icarus Verilog
+$end
+$timescale
+	1s
+$end
+$scope module tb_q41 $end
+$var wire 8 ! Parallel_Out [7:0] $end
+$var wire 1 " Data_Ready $end
+$var reg 1 # Clock $end
+$var reg 1 $ Reset $end
+$var reg 1 % Serial_In $end
+$scope module uut $end
+$var wire 1 # Clock $end
+$var wire 1 $ Reset $end
+$var wire 1 % Serial_In $end
+$var reg 4 & Counter [3:0] $end
+$var reg 1 " Data_Ready $end
+$var reg 8 ' Parallel_Out [7:0] $end
+$var reg 8 ( Shift_Register [7:0] $end
+$upscope $end
+$upscope $end
+$enddefinitions $end
+$comment Show the parameter values. $end
+$dumpall
+$end
+#0
+$dumpvars
+b0 (
+b0 '
+b0 &
+0%
+1$
+0#
+0"
+b0 !
+$end
+#5
+1#
+#10
+0#
+1%
+0$
+#15
+b1 &
+b1 (
+1#
+#20
+0#
+0%
+#25
+b10 &
+b10 (
+1#
+#30
+0#
+1%
+#35
+b11 &
+b101 (
+1#
+#40
+0#
+#45
+b100 &
+b1011 (
+1#
+#50
+0#
+0%
+#55
+b101 &
+b10110 (
+1#
+#60
+0#
+#65
+b110 &
+b101100 (
+1#
+#70
+0#
+1%
+#75
+b111 &
+b1011001 (
+1#
+#80
+0#
+0%
+#85
+1"
+b10110010 !
+b10110010 '
+b0 &
+b10110010 (
+1#
+#90
+0#
+#95
+b1 &
+b1100100 (
+0"
+1#
+#100
+0#
+#105
+b10 &
+b11001000 (
+1#
+#110
+0#
+1%
+#115
+b11 &
+b10010001 (
+1#
+#120
+0#
+#125
+b100 &
+b100011 (
+1#
+#130
+0#
+0%
+#135
+b101 &
+b1000110 (
+1#
+#140
+0#
+#145
+b110 &
+b10001100 (
+1#
+#150
+0#
+1%
+#155
+b111 &
+b11001 (
+1#
+#160
+0#
+#165
+1"
+b110011 !
+b110011 '
+b0 &
+b110011 (
+1#
+#170
+0#
+0%
+#175
+b1 &
+b1100110 (
+0"
+1#
+#180
+0#
+#185
+b10 &
+b11001100 (
+1#
+#190
+b0 !
+b0 '
+b0 (
+b0 &
+0#
+1$
+#195
+1#
+#200
+0#
+0$
+#205
+b1 &
+1#
+#210
+0#
+#215
+b10 &
+1#
+#220
+0#
