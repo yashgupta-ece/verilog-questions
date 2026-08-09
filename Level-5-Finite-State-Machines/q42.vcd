@@ -1,0 +1,119 @@
+$date
+	Sun Aug 09 13:07:34 2026
+$end
+$version
+	Icarus Verilog
+$end
+$timescale
+	1s
+$end
+$scope module tb_q42 $end
+$var wire 4 ! count [3:0] $end
+$var reg 1 " Clock $end
+$var reg 1 # Reset $end
+$var reg 1 $ Start $end
+$var reg 1 % Stop $end
+$scope module dut $end
+$var wire 1 " Clock $end
+$var wire 1 # Reset $end
+$var wire 1 $ Start $end
+$var wire 1 % Stop $end
+$var wire 1 & enable $end
+$var wire 4 ' count [3:0] $end
+$scope module datapath_instance $end
+$var wire 1 " Clock $end
+$var wire 1 # Reset $end
+$var wire 1 & enable $end
+$var reg 4 ( count [3:0] $end
+$upscope $end
+$scope module fsm_instance $end
+$var wire 1 " Clock $end
+$var wire 1 # Reset $end
+$var wire 1 $ Start $end
+$var wire 1 % Stop $end
+$var parameter 1 ) IDLE $end
+$var parameter 1 * RUNNING $end
+$var reg 1 + Current_State $end
+$var reg 1 , Next_State $end
+$var reg 1 & enable $end
+$upscope $end
+$upscope $end
+$upscope $end
+$enddefinitions $end
+$comment Show the parameter values. $end
+$dumpall
+1*
+0)
+$end
+#0
+$dumpvars
+0,
+0+
+b0 (
+b0 '
+0&
+0%
+0$
+1#
+0"
+b0 !
+$end
+#5
+1"
+#10
+0"
+0#
+#15
+1"
+#20
+1,
+0"
+1$
+#25
+1&
+1+
+1"
+#30
+0"
+0$
+#35
+b1 !
+b1 '
+b1 (
+1"
+#40
+0"
+#45
+b10 !
+b10 '
+b10 (
+1"
+#50
+0"
+#55
+b11 !
+b11 '
+b11 (
+1"
+#60
+0,
+0"
+1%
+#65
+0&
+b100 !
+b100 '
+b100 (
+0+
+1"
+#70
+0"
+0%
+#75
+1"
+#80
+0"
+#85
+1"
+#90
+0"
