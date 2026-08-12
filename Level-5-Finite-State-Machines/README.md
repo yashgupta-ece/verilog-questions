@@ -307,7 +307,10 @@ My design used a dedicated EMERGENCY state with previous_state storage — diffe
 Design Decision — Previous State Recovery:
 Returning to previous_state after emergency clears feels natural but has a safety consideration — if emergency fires during an active green light and clears immediately, traffic resumes on green which could be dangerous. A safer alternative for the main project would be returning to RED after any emergency regardless of previous state.
 
-
+---
+# Waveform:
+![Q43 Waveform](waveforms/q43_waveform.png)
+---
 ## 🚀 Author
 
 Yash Gupta
