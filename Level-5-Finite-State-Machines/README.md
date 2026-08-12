@@ -309,7 +309,7 @@ Returning to previous_state after emergency clears feels natural but has a safet
 
 ---
 # Waveform:
-![Q43 Waveform](waveforms/q43_waveform.png)
+![Q43 Waveforms](waveforms/q43_waveform.png)
 ---
 ## 🚀 Author
 
