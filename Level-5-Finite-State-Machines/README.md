@@ -2,7 +2,7 @@
 
 > **Part of:** [verilog-questions](../) — Verilog HDL learning from zero to FSM-based project  
 > **Tools:** Icarus Verilog · GTKWave · VS Code  
-> **Status:** 🔄 In Progress — Day 17 (Q36- Q42 Completed)
+> **Status:** 🔄 In Progress — Day 18 (Q36- Q43 Completed)
 
 ## What This Level Covers
 
@@ -65,7 +65,7 @@ Clk │    State Register      │
 | Q40 | `q40_Edge_Detector.v` | Edge Detector | ✅ Done |
 | Q41 | `Q41-Serial_to_Parallel_Converter.v` | Serial to Parallel Converter  | ✅ Done |
 | Q42 | `q42_*.v` | FSM with Datapath  | ✅ Done |
-| Q43 | `q43_*.v` | Smart Traffic Controller — 4 states + emergency override | ⏳ |
+| Q43 | `Q43_TC.v` | Smart Traffic Controller — 4 states + emergency override | ✅ Done |
 | Q44 | `q44_*.v` | Parking Lot Controller | ⏳ |
 | Q45 | `q45_*.v` | UART Transmitter FSM | ⏳ |
 
@@ -91,457 +91,222 @@ Useful tips:
 
 ---
 
-# Q42 — FSM with Datapath
+# Q43 — Smart Traffic Controller with Emergency Override
 
-## 📌 Overview
-
-This project implements a **Finite State Machine (FSM) combined with a 4-bit counter datapath** in Verilog HDL.
-
-The FSM acts as the **control unit**, deciding whether the datapath counter should be enabled or stopped.
-
-The project introduces an important RTL design concept:
-
-> **Control Logic + Datapath = Complete Hardware System**
-
-The FSM generates an `enable` signal, which is internally connected to the counter datapath.
+What it does: A Moore FSM traffic light controller with 5 states — 4 normal traffic states and a dedicated EMERGENCY state that activates when an emergency vehicle is detected. The system stores the previous state so it can resume normal operation exactly where it left off after emergency clears.
+Real world use: Real traffic intersections use FSM-based digital controllers. Emergency override is a genuine feature — ambulances and fire trucks trigger it to clear intersections instantly.
 
 ---
+# Objective
 
-## 🎯 Objective
+The main objectives of this project are:
 
-- Understand how an FSM controls a datapath.
-- Separate control logic from datapath logic.
-- Implement a two-state FSM.
-- Generate an `enable` control signal using output logic.
-- Implement a 4-bit counter datapath.
-- Connect multiple Verilog modules using a Top module.
-- Understand hierarchical RTL design.
-- Verify the complete design using a testbench and GTKWave.
-
----
-
-## 🛠️ Features
-
-- 2-State FSM
-- `IDLE` and `RUNNING` states
-- Start/Stop control
-- FSM-generated Enable signal
-- 4-bit Counter Datapath
-- Asynchronous Reset
-- Hierarchical Module Design
-- Separate FSM and Datapath
-- Top-Level Module Integration
-- Testbench Verification
+Implement a multi-state FSM.
+Control traffic lights using Moore output logic.
+Implement an emergency override mechanism.
+Store the previous traffic state.
+Return to the previous state after emergency mode ends.
+Practice state registers and next-state logic.
+Understand the interaction between sequential and combinational logic.
 
 ---
-
-## 📂 Inputs
-
-| Signal | Width | Description |
-| ------ | ----- | ----------- |
-| Clock | 1 | System Clock |
-| Reset | 1 | Asynchronous Reset |
-| Start | 1 | Starts the counter operation |
-| Stop | 1 | Stops the counter operation |
-
+# 📂 Inputs
+Signal	Width	Description
+Clock	1	System clock
+Reset	1	Asynchronous reset
+Emergency	1	Activates emergency override
+# 📂 Outputs
+Signal	Width	Description
+Light_Red	1	Controls red traffic light
+Light_Yellow	1	Controls yellow traffic light
+Light_Green	1	Controls green traffic light
+Emergency_Out	1	Indicates emergency mode
 ---
+# Internal Registers
 
-## 📂 Outputs
+The design uses three important registers:
 
-| Signal | Width | Description |
-| ------ | ----- | ----------- |
-| Count | 4 | Current value of the counter |
+Current State
+reg [2:0] current_state;
 
+Stores the FSM's present state.
+
+Next State
+reg [2:0] next_state;
+
+Stores the state that the FSM will enter on the next clock edge.
+
+Previous State
+reg [2:0] previous_state;
+
+Stores the state from which the controller entered emergency mode.
 ---
+# Code:
+module q43 (
+    input wire Clock, Reset, Emergency,
+    output reg Light0, Light1, Light2, Light3, Emergency_Out
+);
+    reg [2:0] current_state;
+    reg [2:0] next_state;
+    reg [2:0] previous_state;
 
-## ⚙️ Working Principle
+    parameter S0        = 3'b000;
+    parameter S1        = 3'b001;
+    parameter S2        = 3'b010;
+    parameter S3        = 3'b011;
+    parameter EMERGENCY = 3'b100;
 
-The design is divided into three major sections:
+    wire [3:0] Lights;
+    assign Lights = {Light3, Light2, Light1, Light0};
 
-1. **FSM**
-2. **Datapath**
-3. **Top Module**
+    // State register
+    always @(posedge Clock or posedge Reset) begin
+        if (Reset) begin
+            current_state  <= S0;
+            previous_state <= S0;
+        end else begin
+            if (Emergency && current_state != EMERGENCY) begin
+                previous_state <= current_state;
+            end
+            current_state <= next_state;
+        end
+    end
 
+    // Next state logic
+    always @(*) begin
+        next_state = current_state;
+        if (Emergency) begin
+            next_state = EMERGENCY;
+        end else begin
+            case (current_state)
+                S0:        next_state = S1;
+                S1:        next_state = S2;
+                S2:        next_state = S3;
+                S3:        next_state = S0;
+                EMERGENCY: next_state = previous_state;
+                default:   next_state = current_state;
+            endcase
+        end
+    end
+
+    // Output logic
+    always @(*) begin
+        Light0        = 1'b0;
+        Light1        = 1'b0;
+        Light2        = 1'b0;
+        Light3        = 1'b0;
+        Emergency_Out = 1'b0;
+        case (current_state)
+            S0:        Light0        = 1'b1;
+            S1:        Light1        = 1'b1;
+            S2:        Light2        = 1'b1;
+            S3:        Light3        = 1'b1;
+            EMERGENCY: Emergency_Out = 1'b1;
+            default: ;
+        endcase
+    end
+endmodule
 ---
-
-### 1. FSM
-
-The FSM contains two states:
-
-```text
-IDLE
-RUNNING
-````
-
-### IDLE State
-
-```text
-enable = 0
-```
-
-The counter remains stopped.
-
-If:
-
-```text
-Start = 1
-```
-
-the FSM transitions to `RUNNING` on the next rising clock edge.
-
-Otherwise, it remains in `IDLE`.
-
----
-
-### RUNNING State
-
-```text
-enable = 1
-```
-
-The counter is enabled.
-
-If:
-
-```text
-Stop = 1
-```
-
-the FSM transitions back to `IDLE` on the next rising clock edge.
-
-Otherwise, it remains in `RUNNING`.
-
----
-
-## 🔄 State Transition
-
-```text
-                 Start = 1
-              ┌─────────────┐
-              │             ▼
-           ┌──────┐     ┌─────────┐
-           │ IDLE │     │ RUNNING │
-           │      │     │         │
-           │ en=0 │     │  en=1   │
-           └──────┘     └─────────┘
-              ▲             │
-              │             │
-              └─────────────┘
-                 Stop = 1
-```
-
----
-
-## 2. Datapath
-
-The datapath contains a **4-bit counter**.
-
-The counter operates according to the `enable` signal generated by the FSM.
-
-### When Reset is asserted:
-
-```text
-count = 0000
-```
-
-### When enable = 1:
-
-```text
-count = count + 1
-```
-
-### When enable = 0:
-
-```text
-count holds its current value
-```
-
-The counter changes only on the appropriate **rising edge of the clock**.
-
----
-
-## 3. Top Module
-
-The Top module connects the FSM and datapath together.
-
-```text
-                 TOP MODULE
-                     │
-          ┌──────────┴──────────┐
-          │                     │
-          ▼                     ▼
-        FSM                 DATAPATH
-          │                     ▲
-          │      enable         │
-          └─────────────────────┘
-                                │
-                              count
-```
-
-The internal connection is:
-
-```verilog
-wire enable;
-```
-
-The FSM produces `enable`, while the datapath receives it.
-
----
-
-## 🧠 Internal Components
-
-### FSM
-
-* State Register
-* Next-State Logic
-* Output Logic
-* `IDLE` State
-* `RUNNING` State
-
-### Datapath
-
-* 4-bit Counter
-* Enable Control
-* Reset Logic
-
-### Top Module
-
-* FSM Instance
-* Datapath Instance
-* Internal `enable` Wire
-
----
-
-## 🔗 Module Hierarchy
-
-```text
-Q42_tb
-   │
+# State Diagram:
+rst
+   |
    ▼
-Q42_top
-   │
-   ├──────────────► Q42_FSM
-   │                    │
-   │                    │ enable
-   │                    ▼
-   └──────────────► Q42-DATAPATH
-                        │
-                        ▼
-                      count
-```
+ [S0] ──► [S1] ──► [S2] ──► [S3]
+   ▲                              |
+   └──────────────────────────────┘
+
+  Emergency=1 from ANY state → [EMERGENCY]
+  Emergency=0 from EMERGENCY → previous_state
+---
+# State Table:
+
+State	          Light_Output	         Meaning
+S0 (000)	       Light0=1	         Direction 0(active)
+S1 (001)	       Light1=1	         Direction 1(active)
+S2 (010)	       Light2=1	         Direction 2(active)
+S3 (011)	       Light3=1	         Direction 3(active)
+EMERGENCY(100)	Emergency_Out=1	 All directions halted
+---
+# Transition Table:
+
+Current_State	 Emergency	 Next State
+S0	              0	          S1
+S1	              0	          S2
+S2	              0	          S3
+S3	              0	          S0
+ANY	              1	        EMERGENCY
+EMERGENCY	        0	       previous_state
 
 ---
 
-## 📂 Project Files
+# Emergency Override
 
-| File             | Description                                  |
-| ---------------- | -------------------------------------------- |
-| `Q42_FSM.v`      | FSM control logic                            |
-| `Q42-DATAPATH.v` | 4-bit counter datapath                       |
-| `Q42_top.v`      | Top-level module connecting FSM and datapath |
-| `Q42_tb.v`       | Testbench                                    |
-| `q42.vcd`        | GTKWave waveform                             |
+The controller also has an Emergency input.
 
+When:
+
+Emergency = 1'b1;
+
+the FSM immediately transitions toward:
+
+EMERGENCY
+
+Before entering emergency mode, the controller stores the current state in:
+
+previous_state
+Example
+
+If the controller is currently in S2:
+
+S2
+ │
+ │ Emergency = 1
+ ▼
+EMERGENCY
+
+The controller stores:
+
+Previous_State = S2
+
+When the emergency condition is cleared:
+
+Emergency = 0
+
+the FSM returns to:
+
+S2
+
+and continues normal operation.
+
+# Previous-State Mechanism
+
+The previous-state register is an important part of this project.
+
+Normal State
+     │
+     │ Emergency = 1
+     ▼
+Save Current State
+     │
+     ▼
+EMERGENCY
+     │
+     │ Emergency = 0
+     ▼
+Previous State
+     │
+     ▼
+Resume Normal Operation
+
+This prevents the traffic controller from simply restarting from S0 after an emergency.
 ---
 
-# Waveform
+# What I learned:
+My design used a dedicated EMERGENCY state with previous_state storage — different from the simpler priority-input approach. Storing previous state allows the FSM to resume exactly where it left off after emergency clears, which is more realistic behaviour. The two bugs I hit — missing begin/end and case sensitivity — were subtle. The begin/end bug was particularly tricky because the code looked correct visually but only the first statement was inside the if block. Case sensitivity in Verilog is something to always watch — Emergency and EMERGENCY are completely different identifiers.
 
-The waveform verifies the relationship between:
+Design Decision — Previous State Recovery:
+Returning to previous_state after emergency clears feels natural but has a safety consideration — if emergency fires during an active green light and clears immediately, traffic resumes on green which could be dangerous. A safer alternative for the main project would be returning to RED after any emergency regardless of previous state.
 
-```text
-Start → FSM State → enable → Counter
-```
-
-Expected behavior:
-
-```text
-Reset
-  ↓
-IDLE
-enable = 0
-count = 0
-  ↓
-Start = 1
-  ↓
-Rising Clock Edge
-  ↓
-RUNNING
-enable = 1
-  ↓
-Counter increments
-  ↓
-Stop = 1
-  ↓
-Rising Clock Edge
-  ↓
-IDLE
-enable = 0
-  ↓
-Counter stops
-```
-
----
-
-## 🧪 Test Cases
-
-### Test Case 1
-
-✔ Reset Verification
-
-* Reset is asserted.
-* FSM enters `IDLE`.
-* `enable = 0`.
-* Counter is cleared to zero.
-
----
-
-### Test Case 2
-
-✔ Start Operation
-
-* `Start` is asserted.
-* FSM transitions from `IDLE` to `RUNNING` on a rising clock edge.
-* `enable` becomes HIGH.
-
----
-
-### Test Case 3
-
-✔ Counter Operation
-
-* FSM remains in `RUNNING`.
-* `enable = 1`.
-* Counter increments on rising clock edges.
-
-Expected behavior:
-
-```text
-0 → 1 → 2 → 3 → 4 → ...
-```
-
----
-
-### Test Case 4
-
-✔ Stop Operation
-
-* `Stop` is asserted.
-* FSM transitions from `RUNNING` to `IDLE` on a rising clock edge.
-* `enable` becomes LOW.
-* Counter stops incrementing.
-
----
-
-### Test Case 5
-
-✔ Reset During Operation
-
-* Counter is running.
-* Reset is asserted.
-* FSM returns to `IDLE`.
-* Counter is cleared.
-
----
-
-## 📊 Simulation
-
-Simulation Tools:
-
-* Icarus Verilog
-* GTKWave
-* VS Code
-
-### Compile
-
-```bash
-iverilog -o q42 Q42_FSM.v Q42_top.v Q42-DATAPATH.v Q42_tb.v
-```
-
-### Run
-
-```bash
-vvp q42
-```
-
-### View Waveform
-
-```bash
-gtkwave q42.vcd
-```
-
----
-
-## 📚 Concepts Learned
-
-* Finite State Machines
-* Moore FSM
-* State Registers
-* Next-State Logic
-* Output Logic
-* Sequential Logic
-* Combinational Logic
-* Datapath Design
-* FSM and Datapath Separation
-* Hierarchical RTL Design
-* Module Instantiation
-* Named Port Mapping
-* `wire` vs `reg`
-* Non-Blocking Assignments (`<=`)
-* Testbench Design
-* Icarus Verilog Simulation
-* GTKWave Waveform Analysis
-
----
-
-## 💡 Key Learning
-
-The main concept learned from Q42 is that an FSM does not necessarily perform the actual data operation.
-
-Instead:
-
-```text
-              CONTROL
-                 │
-                 ▼
-               FSM
-                 │
-              enable
-                 │
-                 ▼
-              DATAPATH
-                 │
-                 ▼
-               count
-```
-
-The **FSM controls what the datapath should do**, while the **datapath performs the actual operation**.
-
-This separation between control logic and datapath is a fundamental concept in RTL design.
-
----
-
-## 🚀 Future Improvements
-
-* 8-bit Up/Down Counter
-* Multiple counter modes
-* Counter overflow detection
-* Pause/Resume functionality
-* Additional FSM states
-* Parameterized counter width
-* More complex control/datapath architectures
-* Integration with larger RTL systems
-
----
-
-## 🏁 Conclusion
-
-This project demonstrates how a **Finite State Machine can be combined with a datapath to create a complete hierarchical RTL design**.
-
-The FSM controls the counter through an `enable` signal, while the datapath performs the counting operation.
-
-Q42 is an important step from designing individual digital blocks toward designing **larger modular RTL systems**.
-
----
 
 ## 🚀 Author
 
