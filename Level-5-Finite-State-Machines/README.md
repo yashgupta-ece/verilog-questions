@@ -2,7 +2,7 @@
 
 > **Part of:** [verilog-questions](../) — Verilog HDL learning from zero to FSM-based project  
 > **Tools:** Icarus Verilog · GTKWave · VS Code  
-> **Status:** 🔄 In Progress — Day 18 (Q36- Q43 Completed)
+> **Status:** 🔄 In Progress — Day 19 (Q36- Q44 Completed)
 
 ## What This Level Covers
 
@@ -66,7 +66,7 @@ Clk │    State Register      │
 | Q41 | `Q41-Serial_to_Parallel_Converter.v` | Serial to Parallel Converter  | ✅ Done |
 | Q42 | `q42_*.v` | FSM with Datapath  | ✅ Done |
 | Q43 | `Q43_TC.v` | Smart Traffic Controller — 4 states + emergency override | ✅ Done |
-| Q44 | `q44_*.v` | Parking Lot Controller | ⏳ |
+| Q44 | `q44_PL.v` | Parking Lot Controller | ✅ Done |
 | Q45 | `q45_*.v` | UART Transmitter FSM | ⏳ |
 
 ---
@@ -91,83 +91,91 @@ Useful tips:
 
 ---
 
-# Q43 — Smart Traffic Controller with Emergency Override
+# Q44 — Parking Lot Controller FSM
 
-What it does: A Moore FSM traffic light controller with 5 states — 4 normal traffic states and a dedicated EMERGENCY state that activates when an emergency vehicle is detected. The system stores the previous state so it can resume normal operation exactly where it left off after emergency clears.
-Real world use: Real traffic intersections use FSM-based digital controllers. Emergency override is a genuine feature — ambulances and fire trucks trigger it to clear intersections instantly.
+What it does: A Moore FSM-based parking lot controller with 4 states — EMPTY, OCCUPIED, FULL, and a dedicated EMERGENCY state. The controller tracks the parking lot status based on vehicle entry and exit events and provides an emergency override that temporarily takes the system into the EMERGENCY state.
+
+Real world use: Parking management systems use digital controllers and sensors to monitor vehicle entry and exit, determine parking availability, and control gates, indicators, and emergency handling systems.
 
 ---
+
 # Objective
 
 The main objectives of this project are:
 
 Implement a multi-state FSM.
-Control traffic lights using Moore output logic.
+
+Track parking lot status using FSM states.
+
+Handle vehicle entry and exit events.
+
 Implement an emergency override mechanism.
-Store the previous traffic state.
-Return to the previous state after emergency mode ends.
+
+Use Moore output logic to indicate the current parking status.
+
 Practice state registers and next-state logic.
+
+Understand priority between emergency and normal parking operations.
+
 Understand the interaction between sequential and combinational logic.
 
 ---
+
 # 📂 Inputs
-Signal	Width	Description
-Clock	1	System clock
-Reset	1	Asynchronous reset
-Emergency	1	Activates emergency override
-# 📂 Outputs
-Signal	Width	Description
-Light_Red	1	Controls red traffic light
-Light_Yellow	1	Controls yellow traffic light
-Light_Green	1	Controls green traffic light
-Emergency_Out	1	Indicates emergency mode
+
+| Signal | Width | Description |
+|---|---:|---|
+| Clock | 1 | System clock |
+| Reset | 1 | Asynchronous reset |
+| Entry | 1 | Indicates a vehicle entering the parking lot |
+| Exit | 1 | Indicates a vehicle leaving the parking lot |
+| Emergency | 1 | Activates emergency override |
+
 ---
+
+# 📂 Outputs
+
+| Signal | Width | Description |
+|---|---:|---|
+| Empty_Out | 1 | Indicates that the parking lot is empty |
+| Occupied_Out | 1 | Indicates that the parking lot is occupied |
+| Full_Out | 1 | Indicates that the parking lot is full |
+| Emergency_Out | 1 | Indicates that the controller is in emergency mode |
+
+---
+
 # Internal Registers
 
-The design uses three important registers:
+The design uses two important state registers:
 
-Current State
-reg [2:0] current_state;
+### Current State
 
-Stores the FSM's present state.
+reg [1:0] current_state;
 
-Next State
-reg [2:0] next_state;
+### Next State
+reg [1:0] next_state;
 
-Stores the state that the FSM will enter on the next clock edge.
 
-Previous State
-reg [2:0] previous_state;
-
-Stores the state from which the controller entered emergency mode.
----
 # Code:
-module q43 (
-    input wire Clock, Reset, Emergency,
-    output reg Light0, Light1, Light2, Light3, Emergency_Out
+module Q44 (
+    input wire Clock, Reset, Entry, Exit, Emergency,
+    output reg Empty_Out, Occupied_Out, Full_Out, Emergency_Out
 );
-    reg [2:0] current_state;
-    reg [2:0] next_state;
-    reg [2:0] previous_state;
 
-    parameter S0        = 3'b000;
-    parameter S1        = 3'b001;
-    parameter S2        = 3'b010;
-    parameter S3        = 3'b011;
-    parameter EMERGENCY = 3'b100;
+    reg [1:0] current_state;
+    reg [1:0] next_state;
 
-    wire [3:0] Lights;
-    assign Lights = {Light3, Light2, Light1, Light0};
+    parameter Empty     = 2'b00;
+    parameter Occupied  = 2'b01;
+    parameter Full      = 2'b10;
+    parameter EMERGENCY = 2'b11;
 
     // State register
     always @(posedge Clock or posedge Reset) begin
         if (Reset) begin
-            current_state  <= S0;
-            previous_state <= S0;
-        end else begin
-            if (Emergency && current_state != EMERGENCY) begin
-                previous_state <= current_state;
-            end
+            current_state <= Empty;
+        end
+        else begin
             current_state <= next_state;
         end
     end
@@ -175,70 +183,158 @@ module q43 (
     // Next state logic
     always @(*) begin
         next_state = current_state;
+
         if (Emergency) begin
             next_state = EMERGENCY;
-        end else begin
+        end
+        else begin
             case (current_state)
-                S0:        next_state = S1;
-                S1:        next_state = S2;
-                S2:        next_state = S3;
-                S3:        next_state = S0;
-                EMERGENCY: next_state = previous_state;
-                default:   next_state = current_state;
+
+                Empty: begin
+                    if (Entry)
+                        next_state = Occupied;
+                end
+
+                Occupied: begin
+                    if (Entry)
+                        next_state = Full;
+                    else if (Exit)
+                        next_state = Empty;
+                end
+
+                Full: begin
+                    if (Exit)
+                        next_state = Occupied;
+                end
+
+                EMERGENCY: begin
+                    next_state = Empty;
+                end
+
+                default:
+                    next_state = current_state;
+
             endcase
         end
     end
 
-    // Output logic
+    // Moore output logic
     always @(*) begin
-        Light0        = 1'b0;
-        Light1        = 1'b0;
-        Light2        = 1'b0;
-        Light3        = 1'b0;
+
+        Empty_Out     = 1'b0;
+        Occupied_Out  = 1'b0;
+        Full_Out      = 1'b0;
         Emergency_Out = 1'b0;
+
         case (current_state)
-            S0:        Light0        = 1'b1;
-            S1:        Light1        = 1'b1;
-            S2:        Light2        = 1'b1;
-            S3:        Light3        = 1'b1;
-            EMERGENCY: Emergency_Out = 1'b1;
-            default: ;
+
+            Empty:
+                Empty_Out = 1'b1;
+
+            Occupied:
+                Occupied_Out = 1'b1;
+
+            Full:
+                Full_Out = 1'b1;
+
+            EMERGENCY:
+                Emergency_Out = 1'b1;
+
+            default: begin
+                Empty_Out     = 1'b0;
+                Occupied_Out  = 1'b0;
+                Full_Out      = 1'b0;
+                Emergency_Out = 1'b0;
+            end
+
         endcase
     end
+
 endmodule
 ---
 # State Diagram:
-rst
-   |
-   ▼
- [S0] ──► [S1] ──► [S2] ──► [S3]
-   ▲                              |
-   └──────────────────────────────┘
+                         Entry
+              ┌─────────────────────┐
+              │                     ▼
+           [EMPTY] ───────────► [OCCUPIED]
+              ▲                       │
+              │                       │ Entry
+              │                       ▼
+              │                    [FULL]
+              │                       │
+              │                       │ Exit
+              │                       ▼
+              └────────────────── [OCCUPIED]
+                       Exit
 
-  Emergency=1 from ANY state → [EMERGENCY]
-  Emergency=0 from EMERGENCY → previous_state
+  Emergency = 1 from ANY state
+              │
+              ▼
+        [EMERGENCY]
+              │
+              │ Emergency = 0
+              ▼
+           [EMPTY]
 ---
 # State Table:
 
-State	          Light_Output	         Meaning
-S0 (000)	       Light0=1	         Direction 0(active)
-S1 (001)	       Light1=1	         Direction 1(active)
-S2 (010)	       Light2=1	         Direction 2(active)
-S3 (011)	       Light3=1	         Direction 3(active)
-EMERGENCY(100)	Emergency_Out=1	 All directions halted
+| State            | Output              | Meaning                                        |
+| ---------------- | ------------------- | ---------------------------------------------- |
+| `EMPTY (00)`     | `Empty_Out = 1`     | No vehicle currently occupying the parking lot |
+| `OCCUPIED (01)`  | `Occupied_Out = 1`  | Parking lot is occupied but not full           |
+| `FULL (10)`      | `Full_Out = 1`      | Parking lot has reached full capacity          |
+| `EMERGENCY (11)` | `Emergency_Out = 1` | Emergency override is active                   |
+
 ---
 # Transition Table:
 
-Current_State	 Emergency	 Next State
-S0	              0	          S1
-S1	              0	          S2
-S2	              0	          S3
-S3	              0	          S0
-ANY	              1	        EMERGENCY
-EMERGENCY	        0	       previous_state
+| Current State | Entry | Exit | Emergency | Next State |
+| ------------- | ----: | ---: | --------: | ---------- |
+| EMPTY         |     0 |    X |         0 | EMPTY      |
+| EMPTY         |     1 |    X |         0 | OCCUPIED   |
+| OCCUPIED      |     0 |    0 |         0 | OCCUPIED   |
+| OCCUPIED      |     1 |    0 |         0 | FULL       |
+| OCCUPIED      |     0 |    1 |         0 | EMPTY      |
+| FULL          |     0 |    0 |         0 | FULL       |
+| FULL          |     X |    1 |         0 | OCCUPIED   |
+| ANY           |     X |    X |         1 | EMERGENCY  |
+| EMERGENCY     |     X |    X |         1 | EMERGENCY  |
+| EMERGENCY     |     X |    X |         0 | EMPTY      |
 
 ---
+# Normal Parking Operation
 
+The parking controller follows the occupancy sequence:
+
+EMPTY
+  │
+  │ Entry = 1
+  ▼
+OCCUPIED
+  │
+  │ Entry = 1
+  ▼
+FULL
+
+When vehicles leave:
+
+FULL
+  │
+  │ Exit = 1
+  ▼
+OCCUPIED
+  │
+  │ Exit = 1
+  ▼
+EMPTY
+
+Therefore the normal sequence is:
+
+EMPTY → OCCUPIED → FULL
+
+
+FULL → OCCUPIED → EMPTY
+---
 # Emergency Override
 
 The controller also has an Emergency input.
@@ -247,37 +343,53 @@ When:
 
 Emergency = 1'b1;
 
-the FSM immediately transitions toward:
+the FSM overrides normal Entry/Exit processing and transitions to:
 
 EMERGENCY
 
-Before entering emergency mode, the controller stores the current state in:
+Emergency has priority over normal parking operations.
 
-previous_state
-Example
+For example:
 
-If the controller is currently in S2:
+OCCUPIED + Entry + Emergency
+              │
+              ▼
+         EMERGENCY
 
-S2
- │
- │ Emergency = 1
- ▼
+Even though Entry = 1 would normally cause:
+
+OCCUPIED → FULL
+
+the emergency condition takes priority:
+
+OCCUPIED → EMERGENCY
+---
+# Emergency Recovery
+
+Unlike Q43, this controller does not store the previous state.
+
+When emergency is cleared:
+
+Emergency = 0;
+
+the controller returns to:
+
+EMPTY
+
+The sequence is therefore:
+
+Normal State
+     │
+     │ Emergency = 1
+     ▼
 EMERGENCY
+     │
+     │ Emergency = 0
+     ▼
+EMPTY
 
-The controller stores:
-
-Previous_State = S2
-
-When the emergency condition is cleared:
-
-Emergency = 0
-
-the FSM returns to:
-
-S2
-
-and continues normal operation.
-
+This provides a simple restart behavior after emergency mode.
+---
 # Previous-State Mechanism
 
 The previous-state register is an important part of this project.
@@ -302,14 +414,22 @@ This prevents the traffic controller from simply restarting from S0 after an eme
 ---
 
 # What I learned:
-My design used a dedicated EMERGENCY state with previous_state storage — different from the simpler priority-input approach. Storing previous state allows the FSM to resume exactly where it left off after emergency clears, which is more realistic behaviour. The two bugs I hit — missing begin/end and case sensitivity — were subtle. The begin/end bug was particularly tricky because the code looked correct visually but only the first statement was inside the if block. Case sensitivity in Verilog is something to always watch — Emergency and EMERGENCY are completely different identifiers.
+This project helped me understand how an FSM can represent the operating condition of a real-world system rather than simply controlling a sequence of abstract states.
 
-Design Decision — Previous State Recovery:
-Returning to previous_state after emergency clears feels natural but has a safety consideration — if emergency fires during an active green light and clears immediately, traffic resumes on green which could be dangerous. A safer alternative for the main project would be returning to RED after any emergency regardless of previous state.
-
+I learned how to:
+Encode four states using 2 bits.
+Design a parking controller using Entry and Exit inputs.
+Implement emergency override logic.
+Give Emergency higher priority than normal Entry/Exit operations.
+Implement a Moore output structure.
+Use a default state assignment to hold the current state.
+Use asynchronous reset in the state register.
+Separate state-register, next-state, and output logic.
+Build a testbench around external inputs rather than directly controlling internal FSM states.
+Verify the design using Icarus Verilog and GTKWave.
 ---
 # Waveform:
-![Q43 Waveforms](waveforms/q43_waveform.png)
+![Q44 Waveforms](waveforms/q44_waveform.png)
 ---
 ## 🚀 Author
 
