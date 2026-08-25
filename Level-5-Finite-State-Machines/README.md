@@ -2,7 +2,7 @@
 
 > **Part of:** [verilog-questions](../) — Verilog HDL learning from zero to FSM-based project  
 > **Tools:** Icarus Verilog · GTKWave · VS Code  
-> **Status:** 🔄 In Progress — Day 19 (Q36- Q44 Completed)
+> **Status:** 🔄 In Progress — Day 20 (Q36- Q45 Completed) Level 5 Completed Finally!
 
 ## What This Level Covers
 
@@ -67,7 +67,7 @@ Clk │    State Register      │
 | Q42 | `q42_*.v` | FSM with Datapath  | ✅ Done |
 | Q43 | `Q43_TC.v` | Smart Traffic Controller — 4 states + emergency override | ✅ Done |
 | Q44 | `q44_PL.v` | Parking Lot Controller | ✅ Done |
-| Q45 | `q45_*.v` | UART Transmitter FSM | ⏳ |
+| Q45 | `Q45_UARTtx.v` | UART Transmitter FSM | ⏳ |
 
 ---
 
@@ -91,11 +91,11 @@ Useful tips:
 
 ---
 
-# Q44 — Parking Lot Controller FSM
+# Q45 — UART Transmitter FSM
 
-What it does: A Moore FSM-based parking lot controller with 4 states — EMPTY, OCCUPIED, FULL, and a dedicated EMERGENCY state. The controller tracks the parking lot status based on vehicle entry and exit events and provides an emergency override that temporarily takes the system into the EMERGENCY state.
+What it does: A Moore-style FSM-based UART transmitter that converts an 8-bit parallel data value into a serial bit stream. The transmitter uses four states — IDLE, START, DATA, and STOP — to generate a UART frame with one start bit, eight data bits transmitted LSB first, and one stop bit.
 
-Real world use: Parking management systems use digital controllers and sensors to monitor vehicle entry and exit, determine parking availability, and control gates, indicators, and emergency handling systems.
+Real world use: UART is one of the most common serial communication protocols used in embedded systems, microcontrollers, FPGA designs, debugging interfaces, GPS modules, sensors, and communication between digital systems.
 
 ---
 
@@ -103,21 +103,27 @@ Real world use: Parking management systems use digital controllers and sensors t
 
 The main objectives of this project are:
 
-Implement a multi-state FSM.
+Implement a multi-state serial protocol FSM.
 
-Track parking lot status using FSM states.
+Understand the structure of a UART transmission frame.
 
-Handle vehicle entry and exit events.
+Convert parallel 8-bit data into a serial output.
 
-Implement an emergency override mechanism.
+Transmit data LSB first.
 
-Use Moore output logic to indicate the current parking status.
+Implement start and stop bits.
 
-Practice state registers and next-state logic.
+Use an FSM to control the transmission sequence.
 
-Understand priority between emergency and normal parking operations.
+Use a bit counter to track the eight data bits.
 
-Understand the interaction between sequential and combinational logic.
+Use a data register to store the byte being transmitted.
+
+Implement a Busy signal to indicate an active transmission.
+
+Practice the interaction between an FSM and datapath registers.
+
+Understand how sequential and combinational logic work together in a practical communication system.
 
 ---
 
@@ -127,9 +133,8 @@ Understand the interaction between sequential and combinational logic.
 |---|---:|---|
 | Clock | 1 | System clock |
 | Reset | 1 | Asynchronous reset |
-| Entry | 1 | Indicates a vehicle entering the parking lot |
-| Exit | 1 | Indicates a vehicle leaving the parking lot |
-| Emergency | 1 | Activates emergency override |
+| Start | 1 | Starts a new UART transmission |
+| Data | 8 | Parallel data byte to transmit |
 
 ---
 
@@ -137,46 +142,62 @@ Understand the interaction between sequential and combinational logic.
 
 | Signal | Width | Description |
 |---|---:|---|
-| Empty_Out | 1 | Indicates that the parking lot is empty |
-| Occupied_Out | 1 | Indicates that the parking lot is occupied |
-| Full_Out | 1 | Indicates that the parking lot is full |
-| Emergency_Out | 1 | Indicates that the controller is in emergency mode |
+| Tx | 1 | Serial UART transmission output |
+| Busy | 1 | Indicates that a transmission is currently active |
 
 ---
 
 # Internal Registers
 
-The design uses two important state registers:
+The design uses four important registers.
 
 ### Current State
 
+```verilog
 reg [1:0] current_state;
+```
 
 ### Next State
 reg [1:0] next_state;
 
-
-# Code:
-module Q44 (
-    input wire Clock, Reset, Entry, Exit, Emergency,
-    output reg Empty_Out, Occupied_Out, Full_Out, Emergency_Out
+### Code:
+module Q45 (
+    input wire Clock,
+    input wire Reset,
+    input wire Start,
+    input wire [7:0] Data,
+    output reg Tx,
+    output reg Busy
 );
 
     reg [1:0] current_state;
     reg [1:0] next_state;
 
-    parameter Empty     = 2'b00;
-    parameter Occupied  = 2'b01;
-    parameter Full      = 2'b10;
-    parameter EMERGENCY = 2'b11;
+    parameter IDLE  = 2'b00;
+    parameter START = 2'b01;
+    parameter DATA  = 2'b10;
+    parameter STOP  = 2'b11;
 
-    // State register
+    reg [7:0] data_reg;
+    reg [2:0] bit_count;
+
+    // State register and datapath registers
     always @(posedge Clock or posedge Reset) begin
         if (Reset) begin
-            current_state <= Empty;
+            current_state <= IDLE;
+            bit_count <= 3'b000;
         end
         else begin
             current_state <= next_state;
+
+            if (current_state == IDLE && Start) begin
+                data_reg <= Data;
+                bit_count <= 3'b000;
+            end
+
+            else if (current_state == DATA && bit_count < 3'd7) begin
+                bit_count <= bit_count + 1'b1;
+            end
         end
     end
 
@@ -184,67 +205,65 @@ module Q44 (
     always @(*) begin
         next_state = current_state;
 
-        if (Emergency) begin
-            next_state = EMERGENCY;
-        end
-        else begin
-            case (current_state)
+        case (current_state)
 
-                Empty: begin
-                    if (Entry)
-                        next_state = Occupied;
-                end
+            IDLE: begin
+                if (Start)
+                    next_state = START;
+            end
 
-                Occupied: begin
-                    if (Entry)
-                        next_state = Full;
-                    else if (Exit)
-                        next_state = Empty;
-                end
+            START: begin
+                next_state = DATA;
+            end
 
-                Full: begin
-                    if (Exit)
-                        next_state = Occupied;
-                end
+            DATA: begin
+                if (bit_count == 3'd7)
+                    next_state = STOP;
+                else
+                    next_state = DATA;
+            end
 
-                EMERGENCY: begin
-                    next_state = Empty;
-                end
+            STOP: begin
+                next_state = IDLE;
+            end
 
-                default:
-                    next_state = current_state;
+            default:
+                next_state = IDLE;
 
-            endcase
-        end
+        endcase
     end
 
-    // Moore output logic
+    // Output logic
     always @(*) begin
 
-        Empty_Out     = 1'b0;
-        Occupied_Out  = 1'b0;
-        Full_Out      = 1'b0;
-        Emergency_Out = 1'b0;
+        Tx = 1'b0;
+        Busy = 1'b0;
 
         case (current_state)
 
-            Empty:
-                Empty_Out = 1'b1;
+            IDLE: begin
+                Tx = 1'b1;
+                Busy = 1'b0;
+            end
 
-            Occupied:
-                Occupied_Out = 1'b1;
+            START: begin
+                Tx = 1'b0;
+                Busy = 1'b1;
+            end
 
-            Full:
-                Full_Out = 1'b1;
+            DATA: begin
+                Tx = data_reg[bit_count];
+                Busy = 1'b1;
+            end
 
-            EMERGENCY:
-                Emergency_Out = 1'b1;
+            STOP: begin
+                Tx = 1'b1;
+                Busy = 1'b1;
+            end
 
             default: begin
-                Empty_Out     = 1'b0;
-                Occupied_Out  = 1'b0;
-                Full_Out      = 1'b0;
-                Emergency_Out = 1'b0;
+                Tx = 1'b0;
+                Busy = 1'b0;
             end
 
         endcase
@@ -253,185 +272,115 @@ module Q44 (
 endmodule
 ---
 # State Diagram:
-                         Entry
-              ┌─────────────────────┐
-              │                     ▼
-           [EMPTY] ───────────► [OCCUPIED]
-              ▲                       │
-              │                       │ Entry
-              │                       ▼
-              │                    [FULL]
-              │                       │
-              │                       │ Exit
-              │                       ▼
-              └────────────────── [OCCUPIED]
-                       Exit
+                         Start = 1
+                            │
+                            ▼
+                       ┌─────────┐
+                       │  START  │
+                       └────┬────┘
+                            │
+                            ▼
+                       ┌─────────┐
+                       │  DATA   │
+                       │ Bit 0-7 │
+                       └────┬────┘
+                            │
+                     bit_count == 7
+                            │
+                            ▼
+                       ┌─────────┐
+                       │  STOP   │
+                       └────┬────┘
+                            │
+                            ▼
+                       ┌─────────┐
+                  ┌───►│  IDLE   │
+                  │    └─────────┘
+                  │
+                  └── Start = 0
 
-  Emergency = 1 from ANY state
-              │
-              ▼
-        [EMERGENCY]
-              │
-              │ Emergency = 0
-              ▼
-           [EMPTY]
 ---
 # State Table:
 
-| State            | Output              | Meaning                                        |
-| ---------------- | ------------------- | ---------------------------------------------- |
-| `EMPTY (00)`     | `Empty_Out = 1`     | No vehicle currently occupying the parking lot |
-| `OCCUPIED (01)`  | `Occupied_Out = 1`  | Parking lot is occupied but not full           |
-| `FULL (10)`      | `Full_Out = 1`      | Parking lot has reached full capacity          |
-| `EMERGENCY (11)` | `Emergency_Out = 1` | Emergency override is active                   |
+| State        |                    Tx | Busy | Meaning                        |
+| ------------ | --------------------: | ---: | ------------------------------ |
+| `IDLE (00)`  |                     1 |    0 | Waiting for a new transmission |
+| `START (01)` |                     0 |    1 | Sending the UART start bit     |
+| `DATA (10)`  | `data_reg[bit_count]` |    1 | Sending the 8 data bits        |
+| `STOP (11)`  |                     1 |    1 | Sending the UART stop bit      |
 
 ---
+
 # Transition Table:
 
-| Current State | Entry | Exit | Emergency | Next State |
-| ------------- | ----: | ---: | --------: | ---------- |
-| EMPTY         |     0 |    X |         0 | EMPTY      |
-| EMPTY         |     1 |    X |         0 | OCCUPIED   |
-| OCCUPIED      |     0 |    0 |         0 | OCCUPIED   |
-| OCCUPIED      |     1 |    0 |         0 | FULL       |
-| OCCUPIED      |     0 |    1 |         0 | EMPTY      |
-| FULL          |     0 |    0 |         0 | FULL       |
-| FULL          |     X |    1 |         0 | OCCUPIED   |
-| ANY           |     X |    X |         1 | EMERGENCY  |
-| EMERGENCY     |     X |    X |         1 | EMERGENCY  |
-| EMERGENCY     |     X |    X |         0 | EMPTY      |
+| Current State | Condition       | Next State |
+| ------------- | --------------- | ---------- |
+| IDLE          | `Start = 0`     | IDLE       |
+| IDLE          | `Start = 1`     | START      |
+| START         | —               | DATA       |
+| DATA          | `bit_count < 7` | DATA       |
+| DATA          | `bit_count = 7` | STOP       |
+| STOP          | —               | IDLE       |
+| Invalid       | —               | IDLE       |
+
 
 ---
-# Normal Parking Operation
+### UART Transmission Sequence
 
-The parking controller follows the occupancy sequence:
+When a new byte is ready to be transmitted:
 
-EMPTY
-  │
-  │ Entry = 1
-  ▼
-OCCUPIED
-  │
-  │ Entry = 1
-  ▼
-FULL
-
-When vehicles leave:
-
-FULL
-  │
-  │ Exit = 1
-  ▼
-OCCUPIED
-  │
-  │ Exit = 1
-  ▼
-EMPTY
-
-Therefore the normal sequence is:
-
-EMPTY → OCCUPIED → FULL
-
-
-FULL → OCCUPIED → EMPTY
----
-# Emergency Override
-
-The controller also has an Emergency input.
-
-When:
-
-Emergency = 1'b1;
-
-the FSM overrides normal Entry/Exit processing and transitions to:
-
-EMERGENCY
-
-Emergency has priority over normal parking operations.
-
-For example:
-
-OCCUPIED + Entry + Emergency
-              │
-              ▼
-         EMERGENCY
-
-Even though Entry = 1 would normally cause:
-
-OCCUPIED → FULL
-
-the emergency condition takes priority:
-
-OCCUPIED → EMERGENCY
----
-# Emergency Recovery
-
-Unlike Q43, this controller does not store the previous state.
-
-When emergency is cleared:
-
-Emergency = 0;
-
-the controller returns to:
-
-EMPTY
-
-The sequence is therefore:
-
-Normal State
-     │
-     │ Emergency = 1
-     ▼
-EMERGENCY
-     │
-     │ Emergency = 0
-     ▼
-EMPTY
-
-This provides a simple restart behavior after emergency mode.
----
-# Previous-State Mechanism
-
-The previous-state register is an important part of this project.
-
-Normal State
-     │
-     │ Emergency = 1
-     ▼
-Save Current State
-     │
-     ▼
-EMERGENCY
-     │
-     │ Emergency = 0
-     ▼
-Previous State
-     │
-     ▼
-Resume Normal Operation
-
-This prevents the traffic controller from simply restarting from S0 after an emergency.
+IDLE
+ │
+ │ Start = 1
+ ▼
+START
+ │
+ │ one clock
+ ▼
+DATA
+ │
+ ├── Data[0]
+ ├── Data[1]
+ ├── Data[2]
+ ├── Data[3]
+ ├── Data[4]
+ ├── Data[5]
+ ├── Data[6]
+ └── Data[7]
+ │
+ ▼
+STOP
+ │
+ │ one clock
+ ▼
+IDLE
 ---
 
-# What I learned:
-This project helped me understand how an FSM can represent the operating condition of a real-world system rather than simply controlling a sequence of abstract states.
+### What I learned:
+
+This project helped me understand how an FSM can control a real communication protocol rather than simply controlling the operating condition of a system.
 
 I learned how to:
 Encode four states using 2 bits.
-Design a parking controller using Entry and Exit inputs.
-Implement emergency override logic.
-Give Emergency higher priority than normal Entry/Exit operations.
-Implement a Moore output structure.
-Use a default state assignment to hold the current state.
-Use asynchronous reset in the state register.
+Design a UART transmitter using IDLE, START, DATA, and STOP states.
+Transmit an 8-bit data value serially using LSB-first transmission.
+Use a 3-bit bit counter to track the eight data bits.
+Use a data register to store the byte during transmission.
+Implement start and stop bits as part of a UART frame.
+Implement a Busy output to indicate an active transmission.
 Separate state-register, next-state, and output logic.
-Build a testbench around external inputs rather than directly controlling internal FSM states.
-Verify the design using Icarus Verilog and GTKWave.
+Combine an FSM with datapath registers such as a data register and bit counter.
+Build a testbench around external inputs such as Start and Data.
+Verify the complete serial transmission using Icarus Verilog and GTKWave.
 ---
 # Waveform:
-![Q44 Waveforms](waveforms/q44_waveform.png)
+![Q45 Waveforms](waveforms/q45_waveform.png)
 ---
-## 🚀 Author
+### 🎉 Level 5 — Finally Completed!
+
+Honestly, this one feels special.
+---
+### 🚀 Author
 
 Yash Gupta
 
