@@ -2,7 +2,7 @@
 
 > **Part of:** [verilog-questions](../) — Verilog HDL learning from zero to FSM-based project  
 > **Tools:** Icarus Verilog · GTKWave · VS Code  
-> **Status:** 🔄 In Progress — Day 1 (Q46 done)
+> **Status:** 🔄 In Progress — Day 2 (Q46-Q47 done)
 
 ---
 
@@ -23,7 +23,7 @@ Every large design in real VLSI is built from smaller verified modules connected
 | # | File | What It Does | Status |
 |---|------|-------------|--------|
 | Q46 | `Q46_4bitRCA.v` | 4-bit Ripple Carry Adder using 4 Full Adder instances | ✅ Done |
-| Q47 | `q47_*` | 8-bit Adder using two 4-bit Adder instances | ⬜ Not Started |
+| Q47 | `Q47_8BITADDR` | 8-bit Adder using two 4-bit Adder instances | ✅ Done |
 | Q48 | `q48_*.v` | ALU using separate sub-modules for each operation | ⬜ Not Started |
 | Q49 | `q49_*.v` | Exhaustive testbench for 4-bit counter | ⬜ Not Started |
 | Q50 | `q50_*.v` | Exhaustive testbench for traffic light FSM | ⬜ Not Started |
@@ -103,6 +103,43 @@ endmodule
 Module instantiation uses named port mapping — `.a(a[0])` means "connect port named `a` of the sub-module to signal `a[0]` in this module." The intermediate carry wires `c1`, `c2`, `c3` must be declared as `wire` in the top module — they are internal connections not visible outside. The most important thing I learned is that the full adder module I built in Q9 can be directly reused here without any changes — this is the real power of modular design. In real chip design, verified modules are reused across hundreds of larger designs.
 
 ---
+### Q47 — 8-bit Adder using Two 4-bit Ripple Carry Adder Instances
+
+What it does: Adds two 8-bit numbers by connecting two 4-bit ripple carry adder instances together. The carry-out of the lower 4-bit adder (RC1) feeds directly into the carry-in of the upper 4-bit adder (RC2).
+Real world use: This is exactly how real multi-bit adders are built — verified smaller adders chained together. A 32-bit adder in a processor uses the same principle scaled up.
+
+### Code:
+```verilog
+module Eight_bit_Adder (
+    input wire [7:0] A_in,
+    input wire [7:0] B_in,
+    input wire C_in,
+    output wire [7:0] Sum,
+    output wire C_out
+);
+    wire C4;
+    Ripple_Carry RC1(.A_in(A_in[3:0]),.B_in(B_in[3:0]),.C_in(C_in),.Sum(Sum[3:0]),.C_out(C4));
+    Ripple_Carry RC2(.A_in(A_in[7:4]),.B_in(B_in[7:4]),.C_in(C4),.Sum(Sum[7:4]),.C_out(C_out));
+endmodule
+```
+### Test Cases Verified:
+
+|A_in(hex) | B_in(hex) |	C_in |	Sum(hex) |	C_out  |	Decimal Check              |
+|--------------------------------------------------------------------------------------|
+|00	      |    00	   |   0	  |      00	 |      0  |	  0+0=0 ✅                |
+|01	      |    01	   |   0	  |      02	 |      0  |	  1+1=2 ✅                |
+|0F	      |    01	   |   0	  |      10	 |      0  |	  15+1=16 ✅              |
+|55	      |    33	   |   0	  |      88	 |      0  |	  85+51=136 ✅            |
+|FF	      |    01	   |   0	  |      00	 |      1  |	  255+1=256 overflow ✅   |
+|AA	      |    55	   |   1	  |      00	 |      1  |	  170+85+1=256 overflow ✅|
+|FF	      |    FF	   |   1	  |      FF	 |      1  |	  255+255+1=511 ✅        |
+---
+## Waveform:
+![Q47 Waveform](waveforms/q47_waveform.png)
+---
+**What I learned:**
+The internal carry wire RC1_cout connects RC1's carry-out directly to RC2's carry-in — this is what makes it a proper 8-bit adder rather than two independent 4-bit adders. I also added RC1's internal signals to GTKWave using the hierarchy tree on the left panel — expanding dut → RC1 showed me the individual FA_0 to FA_3 signals inside the lower adder. Seeing the hierarchy visually in GTKWave made the module nesting much clearer than reading the code alone. The overflow cases where Sum=00 and C_out=1 confirmed the carry propagation is working correctly across the boundary between RC1 and RC2.
+---
 
 ## Key Concepts So Far
 
@@ -127,7 +164,7 @@ Always build from verified smaller pieces.
 ---
 
 *Updated as questions are completed*  
-*Next: Q47 8-bit adder using two 4-bit adder instances*  
+*Next: Q48 ALU using separate sub-modules* 
 *Previous: [Level 5 — FSMs]
 
 ---
