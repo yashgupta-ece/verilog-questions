@@ -2,7 +2,7 @@
 
 > **Part of:** [verilog-questions](../) — Verilog HDL learning from zero to FSM-based project  
 > **Tools:** Icarus Verilog · GTKWave · VS Code  
-> **Status:** 🔄 In Progress — Day 2 (Q46-Q47 done)
+> **Status:** 🔄 In Progress — Day 3 (Q46-Q48 done)
 
 ---
 
@@ -24,7 +24,7 @@ Every large design in real VLSI is built from smaller verified modules connected
 |---|------|-------------|--------|
 | Q46 | `Q46_4bitRCA.v` | 4-bit Ripple Carry Adder using 4 Full Adder instances | ✅ Done |
 | Q47 | `Q47_8BITADDR` | 8-bit Adder using two 4-bit Adder instances | ✅ Done |
-| Q48 | `q48_*.v` | ALU using separate sub-modules for each operation | ⬜ Not Started |
+| Q48 | `Q48_ALU.v` | ALU using separate sub-modules for each operation | ✅ Done |
 | Q49 | `q49_*.v` | Exhaustive testbench for 4-bit counter | ⬜ Not Started |
 | Q50 | `q50_*.v` | Exhaustive testbench for traffic light FSM | ⬜ Not Started |
 
@@ -140,6 +140,90 @@ endmodule
 **What I learned:**
 The internal carry wire RC1_cout connects RC1's carry-out directly to RC2's carry-in — this is what makes it a proper 8-bit adder rather than two independent 4-bit adders. I also added RC1's internal signals to GTKWave using the hierarchy tree on the left panel — expanding dut → RC1 showed me the individual FA_0 to FA_3 signals inside the lower adder. Seeing the hierarchy visually in GTKWave made the module nesting much clearer than reading the code alone. The overflow cases where Sum=00 and C_out=1 confirmed the carry propagation is working correctly across the boundary between RC1 and RC2.
 ---
+### Q48 — 4-bit ALU using Sub-modules
+
+**What it does**: A 4-bit ALU that performs Add, Subtract, AND, OR operations using separate sub-modules for each operation. A 2-bit select signal chooses which result to output.
+Real world use: Every processor has an ALU at its core. The real insight here is that the ALU doesn't switch between operations — all four operations run simultaneously and a multiplexer selects which result to pass through. This is how real hardware works.
+
+### Code:
+```verilog
+module ALU (
+    input wire [3:0] A_in,
+    input wire [3:0] B_in,
+    input wire [1:0] Sel,
+    output reg [3:0] ALU_Out
+);
+    wire [3:0] Add_Result;
+    wire [3:0] Sub_Result;
+    wire [3:0] AND_Result;
+    wire [3:0] XOR_Result;
+
+    Ripple_Carry ADD(
+        .A_in(A_in),
+        .B_in(B_in),
+        .C_in(1'b0),
+        .Sum(Add_Result),
+        .C_out()
+    );
+
+    SUBTRACTION SUB(
+        .A(A_in),
+        .B(B_in),
+        .Y(Sub_Result)
+    );
+
+    AND And(
+        .A(A_in),
+        .B(B_in),
+        .Y(AND_Result)
+    );
+
+    XOR Xor(
+        .A(A_in),
+        .B(B_in),
+        .Y(XOR_Result)
+    );
+
+    always @(*) begin
+        case (Sel)
+            2'b00:ALU_Out=Add_Result;
+            2'b01:ALU_Out=Sub_Result;
+            2'b10:ALU_Out= AND_Result;
+            2'b11:ALU_Out=XOR_Result;
+            default:ALU_Out=4'b0000;
+        endcase
+    end
+endmodule
+```
+---
+### Operation Table:
+|Sel	|   Operation	|  Example (A=5, B=3)	|   Result |
+|----------------------------------------------------------|
+| 00    |  Addition     |      5+3              |     8    |
+| 01    |  Subtraction  |      5-3              |     8    |
+| 10    |  AND          |    0101 & 0011        |     8    |
+| 11    |  XOR          |      0101 | 0011      |     8    |
+
+### Test Cases Verified from Waveform:
+
+|A_in | B_in  |	Sel  |	ALU_Out  |	Operation  |
+|----------------------------------------------|
+| 5   |  3    |  00  |     8     |    Add      |
+| 5   |  3    |  01  |     2     |  Subtraction|
+| A   |  C    |  10  |     8     |    AND      |
+| A   |  C    |  11  |     6     |    XOR      |
+| F   |  1    |  00  |     0     |    ADD      |
+| 9   |  3    |  01  |     6     |    AND      |
+
+---
+### Waveform:
+![Q48 Waveform](waveforms/q48_waveform.png)
+
+---
+### What I learned:
+The most important thing I learned in this question is that all four operation modules run simultaneously — the adder, subtractor, AND, and OR are all computing their results every single moment. The case statement on Sel is just a multiplexer selecting which result to output. This is fundamentally different from software where only one operation executes at a time. Hardware is always running — you just choose which output to use. I also learned that AND and OR cannot be used as instance names in Verilog because they are reserved keywords — I used AND_M and OR_M instead.
+
+---
 
 ## Key Concepts So Far
 
@@ -164,7 +248,7 @@ Always build from verified smaller pieces.
 ---
 
 *Updated as questions are completed*  
-*Next: Q48 ALU using separate sub-modules* 
+*Next: Q49 exhaustive testbench for 4-bit counter*
 *Previous: [Level 5 — FSMs]
 
 ---
