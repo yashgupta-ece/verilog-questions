@@ -2,7 +2,7 @@
 
 > **Part of:** [verilog-questions](../) — Verilog HDL learning from zero to FSM-based project  
 > **Tools:** Icarus Verilog · GTKWave · VS Code  
-> **Status:** 🔄 In Progress — Day 3 (Q46-Q48 done)
+> **Status:** 🔄 In Progress — Day 4 (Q46-Q49 done)
 
 ---
 
@@ -25,7 +25,7 @@ Every large design in real VLSI is built from smaller verified modules connected
 | Q46 | `Q46_4bitRCA.v` | 4-bit Ripple Carry Adder using 4 Full Adder instances | ✅ Done |
 | Q47 | `Q47_8BITADDR` | 8-bit Adder using two 4-bit Adder instances | ✅ Done |
 | Q48 | `Q48_ALU.v` | ALU using separate sub-modules for each operation | ✅ Done |
-| Q49 | `q49_*.v` | Exhaustive testbench for 4-bit counter | ⬜ Not Started |
+| Q49 | `Q49_COUNTER.v` | Exhaustive testbench for 4-bit counter | ✅ Done |
 | Q50 | `q50_*.v` | Exhaustive testbench for traffic light FSM | ⬜ Not Started |
 
 ---
@@ -222,7 +222,79 @@ endmodule
 ---
 ### What I learned:
 The most important thing I learned in this question is that all four operation modules run simultaneously — the adder, subtractor, AND, and OR are all computing their results every single moment. The case statement on Sel is just a multiplexer selecting which result to output. This is fundamentally different from software where only one operation executes at a time. Hardware is always running — you just choose which output to use. I also learned that AND and OR cannot be used as instance names in Verilog because they are reserved keywords — I used AND_M and OR_M instead.
+---
+### Q49 — Exhaustive Testbench for 4-bit Up-Down Counter
 
+What it does: A complete testbench for the 4-bit up-down counter covering all meaningful scenarios — count up, count down, mid-count reset, direction change mid-sequence, overflow and underflow behaviour.
+Real world use: In industry, a testbench is not an afterthought — it is written before or alongside the design. A testbench that only checks the happy path is not a testbench, it is a demo. Exhaustive verification means every edge case is covered.
+---
+# Code:
+```verilog
+Main Module
+module Q49(
+    input wire Clock, Reset, UpDown,
+    output reg [3:0] Counter
+);
+    always @(posedge Clock) begin
+        if (Reset)
+            Counter <= 4'b0000;
+        else if (UpDown)
+            Counter <= Counter + 4'b0001;
+        else
+            Counter <= Counter - 4'b0001;
+    end
+endmodule
+```
+
+```verilog
+TESTBENCH
+module tb_q49;
+reg Clock;
+reg Reset;
+reg UpDown;
+
+wire [3:0] Counter;
+
+Q49 dut(
+    .Reset(Reset),.Clock(Clock),.UpDown(UpDown),.Counter(Counter)
+);
+
+always #5 Clock=~Clock;
+
+initial begin
+    $dumpfile("q49.vcd");
+    $dumpvars(0,tb_q49);
+
+    $monitor("Clock=%b,Reset=%b,Updown=%b,Counter=%b",Clock,Reset,UpDown,Counter);
+
+    Clock=0;Reset=1;UpDown=1;#10;
+    Reset=0;UpDown=1;#70;
+    UpDown=0;#30;
+    Reset=1;#10;
+    Reset=0;UpDown=1;#30;
+    UpDown=0;#50;
+    Reset=1;#10;
+    UpDown=1;#170;
+    $finish;
+end
+endmodule
+```
+---
+### Test Scenarios Verified:
+| Scenario           | What Was Tested                                  | Result   |
+| ------------------ | ------------------------------------------------ | ---------|
+| Initial reset      | Counter starts at 0000 on reset                  | ✅      |
+| Count up           | 0 → 1 → 2 → 3 → 4 → 5 → 6 → 7                    | ✅      |
+| Direction change   | UpDown switches mid-sequence, counter reverses   | ✅      |
+| Reset mid-count    | Reset fires while counting, counter returns to 0 | ✅      |
+| Resume after reset | Counter resumes correctly from 0                 | ✅      |
+| Count down         | F → E → D visible in waveform                    | ✅      |
+| Overflow           | Counter wraps F → 0 correctly                    | ✅      |
+---
+![Q49 Waveform](waveforms/q49_waveform.png)
+---
+### What I learned:
+Writing an exhaustive testbench forced me to think about the design from the outside — what inputs could a real user apply, what could go wrong, and what are the boundary conditions. Reset mid-count and direction change mid-sequence are the two cases most beginners skip. The waveform showed the counter hitting F and wrapping back to 0 correctly — this confirmed the 4-bit overflow behaviour is handled naturally by Verilog's arithmetic without any extra logic needed. A good testbench tells a story: setup → normal operation → edge cases → recovery.
 ---
 
 ## Key Concepts So Far
@@ -248,7 +320,7 @@ Always build from verified smaller pieces.
 ---
 
 *Updated as questions are completed*  
-*Next: Q49 exhaustive testbench for 4-bit counter*
+*Next: Q50 exhaustive testbench for traffic light FSM — final question*
 *Previous: [Level 5 — FSMs]
 
 ---
