@@ -1,0 +1,147 @@
+$date
+	Thu Sep 03 14:13:51 2026
+$end
+$version
+	Icarus Verilog
+$end
+$timescale
+	1s
+$end
+$scope module tb_q50 $end
+$var wire 1 ! Light3 $end
+$var wire 1 " Light2 $end
+$var wire 1 # Light1 $end
+$var wire 1 $ Light0 $end
+$var wire 1 % Emergency_Out $end
+$var reg 1 & Clock $end
+$var reg 1 ' Emergency $end
+$var reg 1 ( Reset $end
+$scope module dut $end
+$var wire 1 & Clock $end
+$var wire 1 ' Emergency $end
+$var wire 1 ( Reset $end
+$var wire 4 ) Lights [3:0] $end
+$var parameter 3 * EMERGENCY $end
+$var parameter 3 + S0 $end
+$var parameter 3 , S1 $end
+$var parameter 3 - S2 $end
+$var parameter 3 . S3 $end
+$var reg 1 % Emergency_Out $end
+$var reg 1 $ Light0 $end
+$var reg 1 # Light1 $end
+$var reg 1 " Light2 $end
+$var reg 1 ! Light3 $end
+$var reg 3 / current_state [2:0] $end
+$var reg 3 0 next_state [2:0] $end
+$var reg 3 1 previous_state [2:0] $end
+$upscope $end
+$upscope $end
+$enddefinitions $end
+$comment Show the parameter values. $end
+$dumpall
+b11 .
+b10 -
+b1 ,
+b0 +
+b100 *
+$end
+#0
+$dumpvars
+b0 1
+b1 0
+b0 /
+b1 )
+1(
+0'
+0&
+0%
+1$
+0#
+0"
+0!
+$end
+#5
+1&
+#10
+0&
+0(
+#15
+1#
+b10 )
+0$
+b10 0
+b1 /
+1&
+#20
+b100 0
+0&
+1'
+#25
+1%
+b0 )
+0#
+b100 /
+b1 1
+1&
+#30
+b1 0
+0&
+0'
+#35
+b10 )
+1#
+0%
+b10 0
+b1 /
+1&
+#40
+0&
+#45
+1"
+b100 )
+0#
+b11 0
+b10 /
+1&
+#50
+b100 0
+0&
+1'
+#55
+1%
+b0 )
+0"
+b100 /
+b10 1
+1&
+#60
+b10 0
+0&
+0'
+#65
+b100 )
+1"
+0%
+b11 0
+b10 /
+1&
+#70
+0&
+#75
+1!
+b1000 )
+0"
+b0 0
+b11 /
+1&
+#80
+0&
+#85
+1$
+b1 )
+0!
+b1 0
+b0 /
+1&
+#90
+0&

@@ -2,8 +2,7 @@
 
 > **Part of:** [verilog-questions](../) — Verilog HDL learning from zero to FSM-based project  
 > **Tools:** Icarus Verilog · GTKWave · VS Code  
-> **Status:** 🔄 In Progress — Day 4 (Q46-Q49 done)
-
+> **Status:** ✅ Level 6 Complete — All 5 questions done
 ---
 
 ## What This Level Covers
@@ -26,7 +25,7 @@ Every large design in real VLSI is built from smaller verified modules connected
 | Q47 | `Q47_8BITADDR` | 8-bit Adder using two 4-bit Adder instances | ✅ Done |
 | Q48 | `Q48_ALU.v` | ALU using separate sub-modules for each operation | ✅ Done |
 | Q49 | `Q49_COUNTER.v` | Exhaustive testbench for 4-bit counter | ✅ Done |
-| Q50 | `q50_*.v` | Exhaustive testbench for traffic light FSM | ⬜ Not Started |
+| Q50 | `tb_Q50.v` | Exhaustive testbench for traffic light FSM | ✅ Done |
 
 ---
 
@@ -296,16 +295,86 @@ endmodule
 ### What I learned:
 Writing an exhaustive testbench forced me to think about the design from the outside — what inputs could a real user apply, what could go wrong, and what are the boundary conditions. Reset mid-count and direction change mid-sequence are the two cases most beginners skip. The waveform showed the counter hitting F and wrapping back to 0 correctly — this confirmed the 4-bit overflow behaviour is handled naturally by Verilog's arithmetic without any extra logic needed. A good testbench tells a story: setup → normal operation → edge cases → recovery.
 ---
+### Q50 — Exhaustive Testbench for Traffic Light FSM
 
+What it does: A complete testbench for the Q43 Smart Traffic Controller FSM covering reset, normal state cycling, emergency activation mid-cycle, emergency clearing and state recovery, and repeated emergency triggering.
+Real world use: FSM testbenches in industry must prove every state transition — not just that the happy path works. Emergency and reset scenarios are the most safety-critical cases and must be explicitly verified.
+---
+### Code:
+```verilog
+module tb_q50;
+
+reg Clock;
+reg Reset;
+reg Emergency;
+
+wire Light0;
+wire Light1;
+wire Light2;
+wire Light3;
+wire Emergency_Out;
+
+q43 dut (
+    .Clock(Clock),
+    .Reset(Reset),
+    .Emergency(Emergency),
+    .Light0(Light0),
+    .Light1(Light1),
+    .Light2(Light2),
+    .Light3(Light3),
+    .Emergency_Out(Emergency_Out)
+);
+
+always #5 Clock = ~Clock;
+
+initial begin
+
+    $dumpfile("q50.vcd");
+    $dumpvars(0, tb_q50);
+
+    $monitor("Time=%0t | Clock=%b Reset=%b Emergency=%b | L0=%b L1=%b L2=%b L3=%b Emergency_Out=%b",
+             $time, Clock, Reset, Emergency,
+             Light0, Light1, Light2, Light3, Emergency_Out);
+
+    Clock = 0;Reset = 1;Emergency = 0;#10;
+    Reset = 0;#10;
+    Emergency = 1;#10;
+    Emergency = 0;#10;
+    #10;
+    Emergency = 1;#10;
+    Emergency = 0;#10;
+    #20;
+
+    $finish;
+end
+endmodule
+```
+---
+### Test Scenarios Verified:
+| Scenario              | What Was Tested                                | Result |
+| --------------------- | ---------------------------------------------- | ------ |
+| Reset                 | System initialises to S0, Light0 HIGH          | ✅      |
+| Normal cycling        | S0→S1→S2→S3 state sequence                     | ✅      |
+| Emergency fires       | Emergency_Out goes HIGH, all lights go LOW     | ✅      |
+| Emergency clears      | FSM returns to previous state correctly        | ✅      |
+| Emergency fires again | Second emergency trigger verified              | ✅      |
+| State recovery        | Correct light activates after emergency clears | ✅      |
+---
+### Waveform:
+![Q50 Waveform](waveforms/q50_waveform.png)
+---
+### What I learned:
+An FSM testbench needs to verify not just normal operation but every transition that involves external events — reset, emergency, and recovery. The waveform showed Emergency_Out going HIGH correctly every time Emergency fired and the previous state restoring cleanly when it cleared. This testbench also reused the Q43 module directly without any changes — proving that a well-designed FSM module is self-contained and testable in isolation. Writing this testbench made me think much more carefully about what I need to verify in the main traffic controller project.
+---
 ## Key Concepts So Far
 
-| Concept | What It Means |
-|---------|--------------|
-| Module instantiation | Placing one module inside another like plugging in a chip |
-| Named port mapping | `.port_name(signal)` — connects sub-module port to local signal |
-| Internal wires | `wire` signals declared in top module to connect sub-module ports |
-| Hierarchical design | Building complex systems from verified smaller modules |
-| Reusability | A verified sub-module can be used in many different top modules |
+| Concept               |                        What It Means                              |
+|-----------------------|-------------------------------------------------------------------|
+| Module instantiation  | Placing one module inside another like plugging in a chip         |
+| Named port mapping    | `.port_name(signal)` — connects sub-module port to local signal   |
+| Internal wires        | `wire` signals declared in top module to connect sub-module ports |
+| Hierarchical design   | Building complex systems from verified smaller modules            |
+| Reusability           | A verified sub-module can be used in many different top modules   |
 
 ---
 
@@ -318,11 +387,20 @@ Always build from verified smaller pieces.
 
 
 ---
+### Full Level 6 Summary
+| Concept              | What It Means                                              |
+| -------------------- | ---------------------------------------------------------- |
+| Module instantiation | Placing verified sub-modules inside a top module           |
+| Named port mapping   | `.port(signal)` connects sub-module ports to local signals |
+| Internal wires       | Connect sub-module outputs to other sub-module inputs      |
+| Hierarchical design  | Complex systems built from verified smaller pieces         |
+| Exhaustive testbench | All edge cases covered — not just happy path               |
+| Reusability          | Same module used across multiple designs and testbenches   |
 
+---
 *Updated as questions are completed*  
-*Next: Q50 exhaustive testbench for traffic light FSM — final question*
-*Previous: [Level 5 — FSMs]
-
+*Level 6 Complete — All 50 questions done — Moving to Main Project*
+*Project will be uploaded as a separate repositry*
 ---
 ### 🚀 Author
 
